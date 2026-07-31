@@ -1,0 +1,7 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "transport": "wifi",
+  "i2c_bus": 1,
+  "i2c_address": "0x3C"
+}

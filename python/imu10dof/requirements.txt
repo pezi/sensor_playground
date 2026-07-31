@@ -1,0 +1,4 @@
+websockets>=13.0
+smbus2>=0.3.0
+mpu9250-jmdev>=1.0.12
+bless>=0.2.6   # BLE transport ("transport": "ble" in config.json)

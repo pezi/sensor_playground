@@ -1,0 +1,8 @@
+# Local configuration
+secrets.h
+
+# Arduino build artifacts
+build/
+*.hex
+*.bin
+*.elf

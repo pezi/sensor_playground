@@ -1,0 +1,3 @@
+websockets>=13.0
+smbus2
+bless>=0.2.6   # BLE transport ("transport": "ble" in config.json)

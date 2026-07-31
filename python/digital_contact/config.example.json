@@ -1,0 +1,12 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "sensor_name": "BUTTON",
+  "active_low": true,
+  "interface": "gpio",
+  "pin": 5,
+  "hat_type": "nano",
+  "i2c_bus": 0,
+  "transport": "wifi",
+  "emulation": false
+}

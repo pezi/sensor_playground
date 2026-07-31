@@ -1,0 +1,11 @@
+websockets>=13.0
+bless>=0.2.6   # BLE transport ("transport": "ble" in config.json)
+# Only one of the following is needed, depending on "interface" in config.json:
+gpiozero>=2.0     # interface: "gpio"  (direct Raspberry Pi wiring)
+smbus2>=0.3.0     # interface: "hat"   (NanoHat Hub / GrovePi+ via extension_hat)
+#
+# gpiozero is only a front-end: it also needs a *pin factory* backend, which is
+# NOT on this list because it cannot be pip-installed here. On current
+# Raspberry Pi OS that backend is the system package python3-lgpio, so create
+# the venv with --system-site-packages (see README, "Setup"). Installing lgpio
+# from PyPI instead needs swig and a C toolchain.

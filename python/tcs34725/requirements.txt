@@ -1,0 +1,4 @@
+flask>=3.0.0
+adafruit-circuitpython-tcs34725>=3.3.0
+adafruit-extended-bus>=1.0.2
+bless>=0.2.6   # BLE transport ("transport": "ble" in config.json)
