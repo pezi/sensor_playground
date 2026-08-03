@@ -1,0 +1,7 @@
+websockets>=13.0
+smbus2>=0.3.0  # every hat_type reads the ADC over I2C
+bless>=0.2.6   # BLE transport ("transport": "ble" in config.json)
+#
+# There is no gpiozero here, unlike the digital contact node: the Raspberry Pi
+# has no analog input, so a rotary angle sensor always goes through a hat with
+# an ADC and never through a bare GPIO.

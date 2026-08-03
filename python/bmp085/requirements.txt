@@ -1,0 +1,7 @@
+flask>=3.0.0
+smbus2>=0.3.0
+bless>=0.2.6   # BLE transport ("transport": "ble" in config.json)
+#
+# No BMP085 driver package: the chip returns uncompensated readings and the
+# fixed-point compensation lives in sensor_node.py, mirroring the ESP32
+# sketch. smbus2 is all that is needed to talk to it.

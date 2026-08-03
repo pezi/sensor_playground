@@ -1,0 +1,14 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "sensor_name": "LED",
+  "interface": "gpio",
+  "led_pin": 5,
+  "led_active_low": false,
+  "button_pin": 6,
+  "button_active_low": true,
+  "hat_type": "nano",
+  "i2c_bus": 0,
+  "transport": "wifi",
+  "emulation": false
+}

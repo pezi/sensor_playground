@@ -9,6 +9,7 @@
  *   MAGSWITCH  — Grove magnetic switch     (reed switch closed)
  *   PIR        — Grove PIR motion sensor   (motion detected)
  *   VIBRATION  — Grove vibration sensor    (SW-420, vibration)
+ *   LINEFINDER — Grove Line Finder         (dark line under the sensor)
  *
  * Like the gesture/distance nodes this is push, not poll: the node reads a
  * (debounced) GPIO and sends one JSON message whenever the state changes:
@@ -39,13 +40,19 @@
 //  SENSOR CONFIGURATION — set these three for your sensor
 // ============================================================
 //
-//  | Sensor    | SENSOR_NAME   | ACTIVE_LOW |
-//  |-----------|---------------|------------|
-//  | Button    | "BUTTON"      | true       |
-//  | Hall      | "HALL"        | true       |
-//  | MagSwitch | "MAGSWITCH"   | false      |
-//  | PIR       | "PIR"         | false      |
-//  | Vibration | "VIBRATION"   | true       |
+//  | Sensor     | SENSOR_NAME   | ACTIVE_LOW |
+//  |------------|---------------|------------|
+//  | Button     | "BUTTON"      | true       |
+//  | Hall       | "HALL"        | true       |
+//  | MagSwitch  | "MAGSWITCH"   | false      |
+//  | PIR        | "PIR"         | false      |
+//  | Vibration  | "VIBRATION"   | true       |
+//  | LineFinder | "LINEFINDER"  | false *    |
+//
+//  * The Line Finder's output polarity differs between board revisions, and
+//    its on-board potentiometer sets the black/white threshold rather than the
+//    direction. Hold the sensor over the line and check the app: if it reads
+//    "Line detected" over the bright surface instead, flip ACTIVE_LOW.
 //
 #define SENSOR_NAME "HALL"
 // true: the line idles HIGH and goes LOW when active (button, hall, vibration);

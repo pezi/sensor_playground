@@ -9,6 +9,7 @@ that react to an event:
     MAGSWITCH  — Grove magnetic switch     (reed switch closed)
     PIR        — Grove PIR motion sensor   (motion detected)
     VIBRATION  — Grove vibration sensor    (SW-420, vibration)
+    LINEFINDER — Grove Line Finder         (dark line under the sensor)
 
 The node polls the input (debounced) and pushes one JSON message whenever the
 state changes:
@@ -64,7 +65,17 @@ class GpioInput:
     """Reads a digital input directly from a Raspberry Pi GPIO (gpiozero)."""
 
     def __init__(self, pin, active_low):
-        from gpiozero import DigitalInputDevice
+        try:
+            from gpiozero import DigitalInputDevice
+        except ImportError as e:
+            # A raw ModuleNotFoundError here usually means the node runs
+            # outside its venv, or the venv was never populated.
+            raise RuntimeError(
+                "gpiozero is not installed. Activate this node's venv and "
+                "run 'pip install -r requirements.txt' — the venv must be "
+                "created with --system-site-packages (see README, "
+                "\"Setup\")."
+            ) from e
 
         # gpiozero's pull_up flag does two things at once, and active_low is
         # exactly the right value for both:
@@ -268,4 +279,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Stopped.")

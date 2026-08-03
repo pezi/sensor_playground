@@ -19,10 +19,19 @@ Set the three config defines at the top of the sketch for your sensor:
 | Magnetic switch | `"MAGSWITCH"` | `false` | https://wiki.seeedstudio.com/Grove-Magnetic_Switch/ |
 | PIR motion | `"PIR"` | `false` | https://wiki.seeedstudio.com/Grove-PIR_Motion_Sensor/ |
 | Vibration (SW-420) | `"VIBRATION"` | `true` | https://wiki.seeedstudio.com/Grove-Vibration_Sensor_SW-420/ |
+| Line Finder | `"LINEFINDER"` | `false` * | https://wiki.seeedstudio.com/Grove-Line_Finder/ |
 
 `ACTIVE_LOW = true` means the sensor pulls the signal line LOW when active (the
 internal pull-up is enabled for these); `false` means it drives the line HIGH.
 `INPUT_PIN` is the GPIO the Grove signal (yellow) wire is on.
+
+> \* The Line Finder is an infrared reflectance detector (TCRT5000 plus
+> comparator): it sees a dark line against a bright surface a few millimetres
+> below it — the classic line-following robot sensor. Its output polarity
+> differs between board revisions, and the on-board potentiometer sets the
+> black/white *threshold* rather than the direction. Hold the sensor over the
+> line and check the app: if it reads "Line detected" over the bright surface
+> instead, flip `ACTIVE_LOW`.
 
 ## Protocol
 
@@ -71,6 +80,30 @@ change arrives as one notify.
 3. **Libraries** (Library Manager):
    - `ArduinoJson` by Benoit Blanchon
    - `WebSockets` by Markus Sattler (links2004/arduinoWebSockets)
+
+### Quick install (arduino-cli)
+
+Instead of the manual IDE setup above, you can build and flash with
+[arduino-cli](https://arduino.github.io/arduino-cli/) using the bundled
+script:
+
+```bash
+./install.sh <serial-port> [WIFI|BLE]
+
+# Examples
+./install.sh /dev/cu.usbserial-0001        # BLE (default)
+./install.sh /dev/cu.usbserial-0001 WIFI   # Wi-Fi
+```
+
+The script installs the ESP32 core and all required libraries, creates
+`secrets.h` from `secrets.h.example` on the first run (edit it, then
+re-run), compiles the sketch with
+`-DACTIVE_TRANSPORT=TRANSPORT_<WIFI|BLE>`, and uploads it to the given
+serial port. Watch the serial log afterwards with:
+
+```bash
+arduino-cli monitor -p <serial-port> --config baudrate=115200
+```
 
 ## Configuration
 

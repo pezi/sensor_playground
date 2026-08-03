@@ -42,8 +42,17 @@ Set `sensor_name` and `active_low` in `config.json` for your sensor:
 | Magnetic switch | `"MAGSWITCH"` | `false` | https://wiki.seeedstudio.com/Grove-Magnetic_Switch/ |
 | PIR motion | `"PIR"` | `false` | https://wiki.seeedstudio.com/Grove-PIR_Motion_Sensor/ |
 | Vibration (SW-420) | `"VIBRATION"` | `true` | https://wiki.seeedstudio.com/Grove-Vibration_Sensor_SW-420/ |
+| Line Finder | `"LINEFINDER"` | `false` * | https://wiki.seeedstudio.com/Grove-Line_Finder/ |
 
 `active_low: true` means the sensor pulls the signal line LOW when active.
+
+> \* The Line Finder is an infrared reflectance detector (TCRT5000 plus
+> comparator): it sees a dark line against a bright surface a few millimetres
+> below it — the classic line-following robot sensor. Its output polarity
+> differs between board revisions, and the on-board potentiometer sets the
+> black/white *threshold* rather than the direction. Hold the sensor over the
+> line and check the app: if it reads "Line detected" over the bright surface
+> instead, flip `active_low`.
 
 The node enables the matching internal pull resistor so the idle state is
 defined: a pull-up for `active_low: true` (idles HIGH) and a pull-down for

@@ -2,3 +2,8 @@ flask>=3.0.0
 adafruit-circuitpython-tcs34725>=3.3.0
 adafruit-extended-bus>=1.0.2
 bless>=0.2.6   # BLE transport ("transport": "ble" in config.json)
+#
+# Adafruit-Blinka (pulled in by the driver above) needs the lgpio GPIO
+# backend. Do NOT pip-install lgpio: piwheels has no wheel for it and the
+# source build needs swig. Create the venv with --system-site-packages so
+# pip uses the system python3-lgpio instead (see README, "Setup").

@@ -49,7 +49,7 @@ sudo apt-get install -y python3-dev build-essential
 
 ```bash
 # Create virtual environment
-python3 -m venv venv
+python3 -m venv --system-site-packages venv
 source venv/bin/activate
 
 # Install dependencies
@@ -59,6 +59,24 @@ pip install -r requirements.txt
 cp config.example.json config.json
 # Edit config.json: set api_key and the i2c_bus for your board
 ```
+
+### Why `--system-site-packages`
+
+The Adafruit driver runs on **Adafruit-Blinka**, which depends on the
+GPIO backend `lgpio`. On current Raspberry Pi OS (Debian 13, Python
+3.13) piwheels has no prebuilt `lgpio` wheel, so inside a plain venv
+pip builds it from source — which fails without swig:
+
+```
+swig -python -o lgpio_wrap.c lgpio.i
+error: command 'swig' failed: No such file or directory
+```
+
+Raspberry Pi OS already ships the backend as the **system** packages
+`python3-lgpio` and `python3-rpi-lgpio`; a `--system-site-packages`
+venv lets pip see them and skip the build entirely. An existing venv
+can be converted in place — set `include-system-site-packages = true`
+in `venv/pyvenv.cfg`, then re-run `pip install -r requirements.txt`.
 
 ## Transports
 

@@ -116,6 +116,30 @@ Most boards use I2C address `0x3C` (the sketch default); some are strapped to
    No display library is needed — the SSD1306 is driven with raw I2C writes
    (a port of dart_periphery's `ssd1306.dart`).
 
+### Quick install (arduino-cli)
+
+Instead of the manual IDE setup above, you can build and flash with
+[arduino-cli](https://arduino.github.io/arduino-cli/) using the bundled
+script:
+
+```bash
+./install.sh <serial-port> [WIFI|BLE]
+
+# Examples
+./install.sh /dev/cu.usbserial-0001        # BLE (default)
+./install.sh /dev/cu.usbserial-0001 WIFI   # Wi-Fi
+```
+
+The script installs the ESP32 core and all required libraries, creates
+`secrets.h` from `secrets.h.example` on the first run (edit it, then
+re-run), compiles the sketch with
+`-DACTIVE_TRANSPORT=TRANSPORT_<WIFI|BLE>`, and uploads it to the given
+serial port. Watch the serial log afterwards with:
+
+```bash
+arduino-cli monitor -p <serial-port> --config baudrate=115200
+```
+
 ## Configuration
 
 ### Secrets

@@ -1,7 +1,5 @@
 # Sensor Playground — Node Firmware & Scripts
 
-![Sensor Playground*](images/playground.webp "Sensor Playground*")
-
 Companion firmware for the **Sensor Playground** app: ready-to-flash Arduino
 sketches for the **ESP32** and equivalent Python scripts for **Raspberry Pi**
 class single-board computers, turning a sensor and a board into a node the app
@@ -9,8 +7,10 @@ discovers and reads over your own network — no cloud, no account.
 
 <!-- TODO: replace the Apple id below once the app is live in App Store Connect. -->
 [![Get it on Google Play](https://img.shields.io/badge/Google_Play-Download-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=app.flutterdev.sensortester)
+[![Download on the App Store](https://img.shields.io/badge/App_Store-Download-0D96F6?logo=app-store&logoColor=white)](https://apps.apple.com/app/sensor-playground/id0000000000)
 [![Licence: MIT](https://img.shields.io/badge/Licence-MIT-green)](LICENSE)
 
+> The store links above are **placeholders** and do not resolve yet.
 
 Every supported sensor exists in **two parallel implementations** — one Arduino
 sketch, one Python script — that speak the identical wire protocol. The app
@@ -51,14 +51,15 @@ flowchart LR
     A[Sensor Playground app]
 ```
 
-Nodes come in four flavours, and the app opens a different screen for each:
+Nodes come in five flavours, and the app opens a different screen for each:
 
 | Kind | Behaviour | Sensors |
 |------|-----------|---------|
 | **Pollable** | App requests a reading (HTTPS every 3 s, or BLE read/notify at 1 Hz) | Environment, light, optical, GPS |
 | **Streaming** | Node pushes continuously (WebSocket or BLE notify, every 250 ms) | IMU 10DOF, MMA7660, MPU6050 |
-| **Event push** | Node sends one message per event | PAJ7620 gesture, VL53L0X distance, contact sensors |
+| **Event push** | Node sends one message per event | PAJ7620 gesture, VL53L0X distance, contact sensors, rotary angle |
 | **Display** | Reverse direction — the **app** sends bitmaps to the node | SSD1306 OLED |
+| **Actuator** | Both directions — the app switches it, the node reports the result | LED (+ optional local button) |
 
 The Python sensor nodes additionally support an **emulation mode**
 (`"emulation": true` in `config.json`) that generates plausible readings with no
@@ -76,6 +77,7 @@ hardware attached, so you can exercise the app before wiring anything up.
 |--------|----------|-----|
 | BME680 | Temperature, humidity, pressure, IAQ | I²C |
 | BME280 | Temperature, humidity, pressure | I²C |
+| BMP085 / BMP180 | Temperature, pressure, derived altitude | I²C |
 | SCD30 | Temperature, humidity, CO₂ (NDIR) | I²C |
 | SGP30 | eCO₂, TVOC | I²C |
 | CozIR-A | Temperature, humidity, CO₂ | Serial |
@@ -89,6 +91,7 @@ hardware attached, so you can exercise the app before wiring anything up.
 | Sensor | Measures | Bus |
 |--------|----------|-----|
 | SI1145 | Visible light, infrared, UV index | I²C |
+| TSL2591 | Visible light, infrared, illuminance (lux) | I²C |
 | TCS34725 | RGB colour, colour temperature, illuminance | I²C |
 | Grove Light Sensor | Brightness (raw) | Analog |
 
@@ -107,16 +110,37 @@ hardware attached, so you can exercise the app before wiring anything up.
 |--------|---------|-----|
 | PAJ7620 | Hand gestures (9 basic) | I²C |
 | VL53L0X | Distance (time-of-flight laser) | I²C |
-| Button, Hall, Magnetic switch, PIR, Vibration | Active / inactive | Digital |
+| Button, Hall, Magnetic switch, PIR, Vibration, Line Finder | Active / inactive | Digital |
+| Grove Rotary Angle Sensor | Knob position (raw ADC + angle) | Analog |
 
-The five digital contact sensors share **one** node — set `SENSOR_NAME` and
+The six digital contact sensors share **one** node — set `SENSOR_NAME` and
 `ACTIVE_LOW` (sketch) or `sensor_name` and `active_low` (`config.json`).
+The Line Finder is an infrared reflectance detector that sees a dark line
+against a bright surface; its output polarity differs between board revisions,
+so check it against the app and flip the active-low flag if the two states come
+out swapped.
+
+The rotary angle sensor pushes its **ADC full-scale value with every reading**
+(`adcMax`), because the converter's width belongs to the board and not to the
+knob: 12-bit `0–4095` on an ESP32 or a Grove Base Hat, 10-bit `0–1023` on a
+NanoHat Hub or a GrovePi+. The app scales its dial by what the node reports
+rather than assuming one of them.
 
 ### Display
 
 | Device | Accepts | Bus |
 |--------|---------|-----|
 | SSD1306 128×64 OLED | Monochrome bitmaps, clear command | I²C |
+
+### Actuator
+
+| Device | Accepts | Reports | Bus |
+|--------|---------|---------|-----|
+| LED | On, off, toggle | Its current state | Digital |
+
+The only two-way node: the app switches the LED and the node reports the
+resulting state back, so an optional push button wired to the same node shows
+up in the app as well.
 
 ---
 
