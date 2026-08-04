@@ -7,10 +7,8 @@ discovers and reads over your own network — no cloud, no account.
 
 <!-- TODO: replace the Apple id below once the app is live in App Store Connect. -->
 [![Get it on Google Play](https://img.shields.io/badge/Google_Play-Download-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=app.flutterdev.sensortester)
-[![Download on the App Store](https://img.shields.io/badge/App_Store-Download-0D96F6?logo=app-store&logoColor=white)](https://apps.apple.com/app/sensor-playground/id0000000000)
 [![Licence: MIT](https://img.shields.io/badge/Licence-MIT-green)](LICENSE)
 
-> The store links above are **placeholders** and do not resolve yet.
 
 Every supported sensor exists in **two parallel implementations** — one Arduino
 sketch, one Python script — that speak the identical wire protocol. The app
