@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "esp_camera.h"
 #include <WiFi.h>
+#include <WiFiUdp.h>
 
 // ===========================
 // Select camera model in board_config.h
@@ -8,13 +9,56 @@
 #include "board_config.h"
 
 // ===========================
-// Enter your WiFi credentials
+// WiFi credentials and the node's host name live in secrets.h —
+// copy secrets.h.example to secrets.h and fill in your values.
 // ===========================
-const char *ssid = "**********";
-const char *password = "**********";
+#include "secrets.h"
+
+// ===========================
+// UDP discovery (Sensor Tester contract, see docs/sensor.md)
+// The app broadcasts a "SENSOR_TESTER" probe on port 9133; this node
+// replies with a short-key JSON describing where to reach the camera.
+// ===========================
+const char *NODE_TYPE = "ESP32-CAM";
+const int UDP_PORT = 9133;
+const int HTTP_PORT = 80;    // camera web UI / snapshot
+const int STREAM_PORT = 81;  // MJPEG stream (:81/stream)
+
+WiFiUDP udp;
 
 void startCameraServer();
 void setupLedFlash();
+
+// Name of the detected camera sensor chip, for the discovery reply.
+const char *chipName() {
+  sensor_t *s = esp_camera_sensor_get();
+  if (s == NULL) return "UNKNOWN";
+  switch (s->id.PID) {
+    case OV2640_PID: return "OV2640";
+    case OV3660_PID: return "OV3660";
+    case OV5640_PID: return "OV5640";
+    default: return "UNKNOWN";
+  }
+}
+
+void handleUdpDiscovery() {
+  int packetSize = udp.parsePacket();
+  if (!packetSize) return;
+
+  char buffer[64];
+  int len = udp.read(buffer, sizeof(buffer) - 1);
+  if (len < 0) len = 0;
+  buffer[len] = '\0';
+  if (strstr(buffer, "SENSOR_TESTER") == NULL) return;
+
+  char json[192];
+  snprintf(json, sizeof(json),
+           "{\"type\":\"%s\",\"host\":\"%s\",\"ip\":\"%s\",\"port\":%d,\"stream_port\":%d,\"chip\":\"%s\"}",
+           NODE_TYPE, HOSTNAME, WiFi.localIP().toString().c_str(), HTTP_PORT, STREAM_PORT, chipName());
+  udp.beginPacket(udp.remoteIP(), udp.remotePort());
+  udp.print(json);
+  udp.endPacket();
+}
 
 void setup() {
   Serial.begin(115200);
@@ -107,7 +151,7 @@ void setup() {
   setupLedFlash();
 #endif
 
-  WiFi.begin(ssid, password);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
   WiFi.setSleep(false);
 
   Serial.print("WiFi connecting");
@@ -120,12 +164,17 @@ void setup() {
 
   startCameraServer();
 
+  udp.begin(UDP_PORT);
+  Serial.printf("UDP discovery listening on port %d\n", UDP_PORT);
+
   Serial.print("Camera Ready! Use 'http://");
   Serial.print(WiFi.localIP());
   Serial.println("' to connect");
 }
 
 void loop() {
-  // Do nothing. Everything is done in another task by the web server
-  delay(10000);
+  // The web server runs in its own task; the loop only answers
+  // UDP discovery probes.
+  handleUdpDiscovery();
+  delay(2);
 }
