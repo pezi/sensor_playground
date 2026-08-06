@@ -6,8 +6,11 @@ single-board computers (Raspberry Pi & co.) with an SSD1306 I2C OLED.
 Unlike sensor nodes this node consumes data: the app pushes one JSON
 command per action over the WebSocket and the node draws it on the panel.
 
-    {"image": "<base64>"}   show a bitmap (1024 bytes, see below)
-    {"clear": true}         blank the display
+    {"id": 1, "image": "<base64>"}   show a bitmap (1024 bytes, see below)
+    {"id": 2, "clear": true}         blank the display
+
+The node acknowledges each applied command with the matching id, or returns
+an error ACK when validation or the display write fails.
 
 Bitmap format (matches the dart_periphery SSD1306 example):
 128x64 pixels, 1 bit per pixel, packed horizontally row by row —
@@ -220,31 +223,48 @@ _display = None
 
 
 def handle_command(message):
-    """Execute one JSON command pushed by the app."""
+    """Execute one JSON command and return its ACK/NACK response."""
     try:
         command = json.loads(message)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, TypeError):
         print("Ignoring malformed command")
-        return
+        return {"id": None, "ok": False, "error": "malformed JSON"}
+    if not isinstance(command, dict):
+        return {"id": None, "ok": False, "error": "command must be an object"}
+
+    command_id = command.get("id")
+    if not isinstance(command_id, int):
+        return {"id": None, "ok": False, "error": "missing command id"}
 
     if command.get("clear") is True:
         print("Command: clear")
-        _display.clear()
-        return
+        try:
+            _display.clear()
+        except Exception as exc:
+            return {"id": command_id, "ok": False, "error": str(exc)}
+        return {"id": command_id, "ok": True}
 
     image = command.get("image")
     if image is None:
-        return
+        return {"id": command_id, "ok": False, "error": "unknown command"}
     try:
         data = base64.b64decode(image, validate=True)
-    except binascii.Error:
+    except (binascii.Error, ValueError):
         print("Ignoring command with invalid base64 image")
-        return
+        return {"id": command_id, "ok": False, "error": "invalid base64"}
     if len(data) != FRAME_SIZE:
         print(f"Ignoring image with {len(data)} bytes (need {FRAME_SIZE})")
-        return
+        return {
+            "id": command_id,
+            "ok": False,
+            "error": f"image has {len(data)} bytes; need {FRAME_SIZE}",
+        }
     print("Command: image")
-    _display.show_bitmap(data)
+    try:
+        _display.show_bitmap(data)
+    except Exception as exc:
+        return {"id": command_id, "ok": False, "error": str(exc)}
+    return {"id": command_id, "ok": True}
 
 
 async def main_async():

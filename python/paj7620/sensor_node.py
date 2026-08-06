@@ -167,7 +167,10 @@ async def main_ble(sensor, api_key):
 
     transport = ble_transport.BleTransport(sensor.name, api_key)
     await transport.start()
-    await gesture_loop(sensor, transport.publish)
+    try:
+        await gesture_loop(sensor, transport.publish)
+    finally:
+        await transport.stop()
 
 
 # -- Main --------------------------------------------------------------------

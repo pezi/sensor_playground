@@ -1,14 +1,15 @@
 # Sensor Playground — Node Firmware & Scripts
 
+![Sensor Playground](images/playground.webp "Sensor Playground")
+
+
 Companion firmware for the **Sensor Playground** app: ready-to-flash Arduino
 sketches for the **ESP32** and equivalent Python scripts for **Raspberry Pi**
 class single-board computers, turning a sensor and a board into a node the app
 discovers and reads over your own network — no cloud, no account.
 
-<!-- TODO: replace the Apple id below once the app is live in App Store Connect. -->
 [![Get it on Google Play](https://img.shields.io/badge/Google_Play-Download-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=app.flutterdev.sensortester)
 [![Licence: MIT](https://img.shields.io/badge/Licence-MIT-green)](LICENSE)
-
 
 Every supported sensor exists in **two parallel implementations** — one Arduino
 sketch, one Python script — that speak the identical wire protocol. The app
@@ -19,15 +20,31 @@ a Raspberry Pi (or the reverse) without touching the app.
 
 ## Contents
 
-- [How it works](#how-it-works)
-- [Supported sensors](#supported-sensors)
-- [Repository layout](#repository-layout)
-- [Quick start — ESP32](#quick-start--esp32)
-- [Quick start — Raspberry Pi / SBC](#quick-start--raspberry-pi--sbc)
-- [Transports](#transports)
-- [Protocol reference](#protocol-reference)
-- [Security notes](#security-notes)
-- [Troubleshooting](#troubleshooting)
+- [Sensor Playground — Node Firmware \& Scripts](#sensor-playground--node-firmware--scripts)
+  - [Contents](#contents)
+  - [How it works](#how-it-works)
+  - [Supported sensors](#supported-sensors)
+    - [Environment \& air quality](#environment--air-quality)
+    - [Light \& optical](#light--optical)
+    - [Motion, orientation \& position](#motion-orientation--position)
+    - [Event-driven](#event-driven)
+    - [Display](#display)
+    - [Actuator](#actuator)
+  - [Repository layout](#repository-layout)
+  - [Quick start — ESP32](#quick-start--esp32)
+  - [Quick start — Raspberry Pi / SBC](#quick-start--raspberry-pi--sbc)
+    - [BLE on Linux](#ble-on-linux)
+  - [Transports](#transports)
+  - [Protocol reference](#protocol-reference)
+    - [UDP discovery (Wi-Fi)](#udp-discovery-wi-fi)
+    - [HTTPS REST (pollable Wi-Fi nodes)](#https-rest-pollable-wi-fi-nodes)
+    - [WebSocket (streaming, event and display Wi-Fi nodes)](#websocket-streaming-event-and-display-wi-fi-nodes)
+    - [BLE GATT](#ble-gatt)
+      - [Display command channel](#display-command-channel)
+  - [Security notes](#security-notes)
+  - [Troubleshooting](#troubleshooting)
+  - [Contributing](#contributing)
+  - [Licence](#licence)
 
 ---
 
@@ -53,7 +70,7 @@ Nodes come in five flavours, and the app opens a different screen for each:
 
 | Kind | Behaviour | Sensors |
 |------|-----------|---------|
-| **Pollable** | App requests a reading (HTTPS every 3 s, or BLE read/notify at 1 Hz) | Environment, light, optical, GPS |
+| **Pollable** | App requests a reading (HTTPS every 3 s, or BLE read/notify at 1 Hz) | Environment, light, optical, GPS, dust |
 | **Streaming** | Node pushes continuously (WebSocket or BLE notify, every 250 ms) | IMU 10DOF, MMA7660, MPU6050 |
 | **Event push** | Node sends one message per event | PAJ7620 gesture, VL53L0X distance, contact sensors, rotary angle |
 | **Display** | Reverse direction — the **app** sends bitmaps to the node | SSD1306 OLED |
@@ -67,7 +84,7 @@ hardware attached, so you can exercise the app before wiring anything up.
 
 ## Supported sensors
 
-24 sensors and one display, each available for both platforms.
+25 sensors and one display, each available for both platforms.
 
 ### Environment & air quality
 
@@ -83,6 +100,7 @@ hardware attached, so you can exercise the app before wiring anything up.
 | AHT10 / AHT20 | Temperature, humidity | I²C |
 | MCP9808 | Temperature (high accuracy) | I²C |
 | MLX90615 | Object + ambient temperature (non-contact IR) | I²C |
+| Grove Dust Sensor (PPD42NS) | Dust concentration (pcs/0.01cf, 30 s LPO windows) | Digital |
 
 ### Light & optical
 
@@ -325,7 +343,7 @@ JSON message per event or interval:
 | Attribute | UUID | Properties |
 |-----------|------|------------|
 | Service | `d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f` | Advertised under the sensor name |
-| Data | `d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f` | Read, Notify — UTF-8 JSON |
+| Data | `d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f` | Read — UTF-8 JSON; Notify — framed UTF-8 JSON |
 | Auth | `d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f` | Write — plain API key |
 | Command | `d1a51b00-0004-4a7e-9b3c-0a1b2c3d4e5f` | Write — display nodes only |
 
@@ -334,8 +352,12 @@ to the data characteristic. Reads return `{}` until authenticated, and a
 disconnect clears the authentication. Notifications run at 1 Hz for pollable
 sensors, 250 ms for the motion sensors, and per event for push nodes.
 
-The payload commonly exceeds the default 23-byte ATT MTU, so clients should
-request a larger one (the app asks for 512).
+Notification payloads are split into packets that fit the minimum 23-byte ATT
+MTU. Each packet is `0x1E <message-id> <chunk-index> <flags> <up to 16 bytes>`,
+where flag bit `0x01` marks the first chunk and `0x02` the final chunk. Clients
+discard incomplete/out-of-order messages and may still accept unframed JSON
+from older nodes. A larger negotiated MTU improves display-command throughput
+but is no longer required for sensor readings.
 
 #### Display command channel
 

@@ -6,8 +6,11 @@
  * per action and the node draws it on the panel. Over Wi-Fi a command is
  * one JSON message:
  *
- *     {"image":"<base64>"}   show a bitmap (1024 bytes, see below)
- *     {"clear":true}         blank the display
+ *     {"id":1,"image":"<base64>"}   show a bitmap (1024 bytes, see below)
+ *     {"id":2,"clear":true}         blank the display
+ *
+ * After applying a command the node replies with
+ * `{"id":<same id>,"ok":true}` or an error ACK with `ok:false`.
  *
  * Bitmap format (matches the dart_periphery SSD1306 example):
  * 128x64 pixels, 1 bit per pixel, packed horizontally row by row —
@@ -56,6 +59,7 @@
 
 #if ACTIVE_TRANSPORT == TRANSPORT_WIFI
   #include <WiFi.h>
+  #include "../common/sensor_wifi_runtime.h"
   #include <WiFiUdp.h>
   #include <WebSocketsServer.h>
   #include "mbedtls/base64.h"
@@ -64,6 +68,7 @@
   #include <BLEServer.h>
   #include <BLEUtils.h>
   #include <BLE2902.h>
+  #include "../common/sensor_ble_framing.h"
 
   // Shared Sensor Tester GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
@@ -96,32 +101,32 @@ static uint8_t gNative[FRAME_SIZE];
 
 // Write bytes prefixed with a control byte (0x00 commands, 0x40 data),
 // chunked to respect the Wire transmit buffer.
-void oledWrite(uint8_t control, const uint8_t* data, size_t len) {
+bool oledWrite(uint8_t control, const uint8_t* data, size_t len) {
   const size_t CHUNK = 16;
   for (size_t offset = 0; offset < len; offset += CHUNK) {
     size_t n = min(CHUNK, len - offset);
     Wire.beginTransmission(OLED_ADDRESS);
     Wire.write(control);
     Wire.write(data + offset, n);
-    Wire.endTransmission();
+    if (Wire.endTransmission() != 0) return false;
   }
+  return true;
 }
 
 // Reset the internal memory write index to the begin.
-void oledResetPosition() {
+bool oledResetPosition() {
   const uint8_t reset[] = {0xB0, 0x00, 0x10};
-  oledWrite(0x00, reset, sizeof(reset));
+  return oledWrite(0x00, reset, sizeof(reset));
 }
 
-void oledClear() {
-  oledResetPosition();
+bool oledClear() {
+  if (!oledResetPosition()) return false;
   memset(gNative, 0x00, FRAME_SIZE);
-  oledWrite(0x40, gNative, FRAME_SIZE);
+  return oledWrite(0x40, gNative, FRAME_SIZE);
 }
 
-void oledInit() {
-  oledWrite(0x00, INIT_SEQUENCE, sizeof(INIT_SEQUENCE));
-  oledClear();
+bool oledInit() {
+  return oledWrite(0x00, INIT_SEQUENCE, sizeof(INIT_SEQUENCE)) && oledClear();
 }
 
 // Transpose one column byte: bit `j` of 8 stacked rows starting at `index`.
@@ -138,7 +143,7 @@ uint8_t convertByte(int index, int j) {
 
 // Transpose the horizontal MSB-first bitmap in gBitmap into the SSD1306
 // native page format (8 pages x 128 column bytes, LSB on top) and show it.
-void oledShowBitmap() {
+bool oledShowBitmap() {
   int index = 0;
   int count = 0;
   for (int y = 0; y < OLED_HEIGHT / 8; ++y) {
@@ -151,8 +156,8 @@ void oledShowBitmap() {
     }
     index += OLED_WIDTH;
   }
-  oledResetPosition();
-  oledWrite(0x40, gNative, FRAME_SIZE);
+  if (!oledResetPosition()) return false;
+  return oledWrite(0x40, gNative, FRAME_SIZE);
 }
 
 #if ACTIVE_TRANSPORT == TRANSPORT_WIFI
@@ -177,24 +182,48 @@ bool validateApiKey(String headerName, String headerValue) {
   return true;
 }
 
-// Execute one JSON command pushed by the app.
-void handleCommand(uint8_t* payload, size_t len) {
+void sendCommandAck(uint8_t client, int commandId, bool ok,
+                    const char* error = nullptr) {
+  StaticJsonDocument<192> ack;
+  ack["id"] = commandId;
+  ack["ok"] = ok;
+  if (!ok && error != nullptr) ack["error"] = error;
+  String response;
+  serializeJson(ack, response);
+  webSocket.sendTXT(client, response);
+}
+
+// Execute one JSON command pushed by the app and acknowledge its outcome.
+void handleCommand(uint8_t client, uint8_t* payload, size_t len) {
   StaticJsonDocument<512> doc;
   // Zero-copy parse; the WebSockets library null-terminates text frames.
   DeserializationError error = deserializeJson(doc, (char*)payload, len);
   if (error) {
     Serial.println("Ignoring malformed command");
+    sendCommandAck(client, -1, false, "malformed JSON");
+    return;
+  }
+
+  int commandId = doc["id"] | -1;
+  if (commandId < 0) {
+    sendCommandAck(client, -1, false, "missing command id");
     return;
   }
 
   if (doc["clear"] == true) {
     Serial.println("Command: clear");
-    oledClear();
+    const bool applied = oledClear();
+    sendCommandAck(
+        client, commandId, applied,
+        applied ? nullptr : "display I2C write failed");
     return;
   }
 
   const char* image = doc["image"];
-  if (image == nullptr) return;
+  if (image == nullptr) {
+    sendCommandAck(client, commandId, false, "unknown command");
+    return;
+  }
 
   size_t decoded = 0;
   int result = mbedtls_base64_decode(gBitmap, sizeof(gBitmap), &decoded,
@@ -203,10 +232,14 @@ void handleCommand(uint8_t* payload, size_t len) {
   if (result != 0 || decoded != FRAME_SIZE) {
     Serial.printf("Ignoring image (decode result %d, %u bytes)\n",
                   result, (unsigned)decoded);
+    sendCommandAck(client, commandId, false, "invalid image");
     return;
   }
   Serial.println("Command: image");
-  oledShowBitmap();
+  const bool applied = oledShowBitmap();
+  sendCommandAck(
+      client, commandId, applied,
+      applied ? nullptr : "display I2C write failed");
 }
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
@@ -218,7 +251,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
       Serial.printf("[%u] Client disconnected\n", num);
       break;
     case WStype_TEXT:
-      handleCommand(payload, len);
+      handleCommand(num, payload, len);
       break;
     default:
       break;
@@ -226,15 +259,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
 }
 
 void transportSetup() {
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  Serial.print("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  if (!connectSensorWifi(WIFI_SSID, WIFI_PASS)) {
+    Serial.println("Restarting after WiFi setup failure");
+    delay(1000);
+    ESP.restart();
   }
-  Serial.println("\nWiFi connected.");
-  Serial.print("IP: ");
-  Serial.println(WiFi.localIP());
 
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);
@@ -269,6 +298,10 @@ void handleUdpDiscovery() {
 }
 
 void transportLoop() {
+  if (!sensorWifiReady()) {
+    delay(10);
+    return;
+  }
   webSocket.loop();
   handleUdpDiscovery();
 }
@@ -301,7 +334,7 @@ void handleBleCommand(const uint8_t* packet, size_t len) {
     case CMD_CLEAR:
       gStaged = 0;
       Serial.println("Command: clear");
-      oledClear();
+      if (!oledClear()) Serial.println("Display I2C write failed");
       return;
 
     case CMD_SHOW:
@@ -313,7 +346,7 @@ void handleBleCommand(const uint8_t* packet, size_t len) {
       }
       gStaged = 0;
       Serial.println("Command: image");
-      oledShowBitmap();
+      if (!oledShowBitmap()) Serial.println("Display I2C write failed");
       return;
 
     case CMD_CHUNK:
@@ -433,7 +466,10 @@ void setup() {
     Serial.println("Error: SSD1306 not found!");
     while (1) delay(1000);
   }
-  oledInit();
+  if (!oledInit()) {
+    Serial.println("Error: SSD1306 initialization failed!");
+    while (1) delay(1000);
+  }
 
   transportSetup();
 

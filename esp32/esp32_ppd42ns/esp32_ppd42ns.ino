@@ -1,20 +1,24 @@
 /*
- * Sensor Tester Sensor Node — ESP32 + BMP085 barometer
+ * Sensor Tester Sensor Node — ESP32 + Grove Dust Sensor (Shinyei PPD42NS)
  *
  * Implements the Sensor Tester Sensor Interface (see docs/sensor.md).
- * Reads a BMP085 (temperature + barometric pressure) via I2C — the sensor
- * behind the Grove Barometer Sensor, and the ancestor of the BME280 (no
- * humidity, no gas sensor). Altitude is derived from the pressure.
- * https://wiki.seeedstudio.com/Grove-Barometer_Sensor/
+ * The PPD42NS pulls its output pin LOW while particles scatter light inside
+ * its chamber (pulses of roughly 10-90 ms). The sketch accumulates that
+ * low-pulse occupancy (LPO) over 30-second windows and converts the ratio
+ * into a particle concentration in pcs/0.01cf using the Nafis curve,
+ * reported under the JSON key `dust`:
  *
- * The driver is written out below rather than pulled from a library: the
- * BMP085 returns *uncompensated* readings that only become values after
- * Bosch's fixed-point compensation, and the Python node has to run the
- * identical arithmetic anyway. Keeping both copies next to each other — and
- * checkable against the worked example the datasheet publishes — is worth
- * more than a dependency. See ../../python/bmp085/sensor_node.py.
+ *   ratio         = low_time / window_time * 100          (percent)
+ *   concentration = 1.1*r^3 - 3.8*r^2 + 520*r + 0.62      (pcs/0.01cf)
  *
- * The pin-compatible BMP180 uses the same registers and works unchanged.
+ * https://wiki.seeedstudio.com/Grove-Dust_Sensor/
+ * https://www.howmuchsnow.com/arduino/airquality/grovedust/
+ *
+ * Unlike the digital contact sensors this is a *pollable* node (a continuous
+ * value), so it uses the same HTTPS REST + UDP discovery transport as the
+ * environment sensors rather than the WebSocket push path. The first reading
+ * appears after the first full 30-second window; until then the payloads
+ * carry no `dust` key.
  *
  * Transport is chosen at compile time via ACTIVE_TRANSPORT:
  *   TRANSPORT_WIFI — UDP discovery (9133) + HTTPS REST (9132), self-signed cert
@@ -22,13 +26,9 @@
  *                    the API key to AUTH_CHAR_UUID, then reads/subscribes
  *                    DATA_CHAR_UUID for the same JSON payload.
  *
- * The JSON payload is identical on both transports, so the app parses it the
- * same way regardless of how it arrived.
- *
  * Required Libraries:
- *   ArduinoJson, Wire, and for TRANSPORT_WIFI: WiFi, WiFiUdp.
- *   (BLE uses the ESP32 core's built-in BLE stack.
- *    No sensor library — the BMP085 is driven with raw I2C reads.)
+ *   ArduinoJson, and for TRANSPORT_WIFI: WiFi, WiFiUdp.
+ *   (No sensor library — the pulses are timed with a pin-change interrupt.)
  */
 
 // --- Transport selection (change this line) ---
@@ -38,7 +38,6 @@
 #define ACTIVE_TRANSPORT TRANSPORT_BLE
 #endif
 
-#include <Wire.h>
 #include <ArduinoJson.h>
 #include "secrets.h"
 
@@ -67,188 +66,24 @@
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
 #endif
 
-// ============================================================
-//  BMP085 DRIVER (raw I2C, per the Bosch datasheet)
-// ============================================================
-const char* SENSOR_NAME = "BMP085";
+// --- Sensor ---
+const char* SENSOR_NAME = "PPD42NS";
 
-// The BMP085's I2C address is fixed — there is no address pin.
-const uint8_t BMP085_ADDRESS = 0x77;
+// Pin the PPD42NS P1 output (yellow) reaches through a voltage divider — the
+// sensor runs on 5 V and its output swings up to ~4.5 V, which is NOT
+// 3.3 V-safe (see README). GPIO 34 is input-only; the divider drives it, so
+// no internal pull is needed.
+const int DUST_PIN = 34;
 
-const uint8_t REG_CALIBRATION = 0xAA;  // 22 bytes: AC1..AC6, B1, B2, MB, MC, MD
-const uint8_t REG_CHIP_ID     = 0xD0;  // reads 0x55 on a BMP085 (and a BMP180)
-const uint8_t REG_CONTROL     = 0xF4;
-const uint8_t REG_DATA        = 0xF6;
+const unsigned long DUST_WINDOW_MS = 30000;
 
-const uint8_t CMD_READ_TEMPERATURE = 0x2E;
-const uint8_t CMD_READ_PRESSURE    = 0x34;
-const uint8_t BMP085_CHIP_ID       = 0x55;
+// Written by the ISR, read under noInterrupts() in updateDustWindow().
+volatile unsigned long dustLpoUs = 0;       // low time accumulated this window
+volatile unsigned long dustLowStartUs = 0;  // micros() of the falling edge
+volatile bool dustPinLow = false;           // inside a low pulse right now?
 
-// Oversampling (0-3): more samples, less noise, longer conversion.
-const uint8_t OVERSAMPLING = 3;
-
-// Conversion time per oversampling setting, in ms (datasheet table 3,
-// rounded up for margin).
-const uint8_t CONVERSION_MS[4] = {5, 8, 14, 26};
-
-// Standard sea-level pressure, in pascal. Altitude is relative to this, so it
-// moves with the weather as much as with the height.
-const float SEA_LEVEL_PA = 101325.0f;
-
-// The eleven factory constants stored in the sensor's EEPROM.
-struct Bmp085Calibration {
-  int16_t  ac1, ac2, ac3;
-  uint16_t ac4, ac5, ac6;
-  int16_t  b1, b2, mb, mc, md;
-};
-
-Bmp085Calibration gCalibration;
-
-// Read `count` bytes starting at `reg`. Returns false on a short read, so a
-// dropped sensor surfaces as a failed reading instead of stale numbers.
-bool bmp085Read(uint8_t reg, uint8_t* buffer, uint8_t count) {
-  Wire.beginTransmission(BMP085_ADDRESS);
-  Wire.write(reg);
-  if (Wire.endTransmission() != 0) return false;
-  if (Wire.requestFrom((int)BMP085_ADDRESS, (int)count) != count) return false;
-  for (uint8_t i = 0; i < count; i++) buffer[i] = Wire.read();
-  return true;
-}
-
-bool bmp085Write(uint8_t reg, uint8_t value) {
-  Wire.beginTransmission(BMP085_ADDRESS);
-  Wire.write(reg);
-  Wire.write(value);
-  return Wire.endTransmission() == 0;
-}
-
-// Load the calibration EEPROM. Returns false if the chip is absent or the
-// values are implausible.
-bool bmp085Begin() {
-  uint8_t chipId = 0;
-  if (!bmp085Read(REG_CHIP_ID, &chipId, 1)) {
-    Serial.println("Error: no response from the BMP085 address");
-    return false;
-  }
-  if (chipId != BMP085_CHIP_ID) {
-    Serial.printf("Error: chip id is 0x%02X, expected 0x%02X\n",
-                  chipId, BMP085_CHIP_ID);
-    return false;
-  }
-
-  uint8_t raw[22];
-  if (!bmp085Read(REG_CALIBRATION, raw, sizeof(raw))) {
-    Serial.println("Error: could not read the calibration data");
-    return false;
-  }
-
-  uint16_t words[11];
-  for (uint8_t i = 0; i < 11; i++) {
-    words[i] = ((uint16_t)raw[i * 2] << 8) | raw[i * 2 + 1];
-    // The datasheet states no calibration word is ever 0x0000 or 0xFFFF,
-    // which is exactly what a bus with nothing powered on it reads back.
-    // Catching it here beats compensating with garbage — or dividing by zero.
-    if (words[i] == 0x0000 || words[i] == 0xFFFF) {
-      Serial.printf("Error: implausible calibration word %u = 0x%04X\n",
-                    i, words[i]);
-      return false;
-    }
-  }
-
-  gCalibration.ac1 = (int16_t)words[0];
-  gCalibration.ac2 = (int16_t)words[1];
-  gCalibration.ac3 = (int16_t)words[2];
-  gCalibration.ac4 = words[3];   // AC4, AC5 and AC6 are the unsigned ones
-  gCalibration.ac5 = words[4];
-  gCalibration.ac6 = words[5];
-  gCalibration.b1  = (int16_t)words[6];
-  gCalibration.b2  = (int16_t)words[7];
-  gCalibration.mb  = (int16_t)words[8];
-  gCalibration.mc  = (int16_t)words[9];
-  gCalibration.md  = (int16_t)words[10];
-  return true;
-}
-
-// Start a temperature conversion and read the raw 16-bit result.
-bool bmp085ReadRawTemperature(int32_t* out) {
-  if (!bmp085Write(REG_CONTROL, CMD_READ_TEMPERATURE)) return false;
-  delay(CONVERSION_MS[0]);  // temperature ignores the oversampling setting
-  uint8_t data[2];
-  if (!bmp085Read(REG_DATA, data, 2)) return false;
-  *out = ((int32_t)data[0] << 8) | data[1];
-  return true;
-}
-
-// Start a pressure conversion and read the raw oversampled result.
-bool bmp085ReadRawPressure(int32_t* out) {
-  if (!bmp085Write(REG_CONTROL, CMD_READ_PRESSURE + (OVERSAMPLING << 6))) {
-    return false;
-  }
-  delay(CONVERSION_MS[OVERSAMPLING]);
-  uint8_t data[3];
-  if (!bmp085Read(REG_DATA, data, 3)) return false;
-  int32_t raw = ((int32_t)data[0] << 16) | ((int32_t)data[1] << 8) | data[2];
-  *out = raw >> (8 - OVERSAMPLING);
-  return true;
-}
-
-// Turn raw readings into a temperature (°C) and a pressure (Pa).
-//
-// A direct transcription of the integer algorithm in the BMP085 datasheet.
-// It stays in fixed point on purpose: floating point would be easier to read
-// and would drift from the reference values the datasheet publishes. The
-// Python node runs the same arithmetic — keep the two in step.
-//
-// Valid over the sensor's whole specified range (-40..+85 °C, 300..1100 hPa)
-// and well beyond it; the 32-bit intermediates below only overflow past
-// roughly -210 °C / +260 °C, which no reading that reaches here can produce.
-void bmp085Compensate(int32_t rawTemperature, int32_t rawPressure,
-                      float* temperature, int32_t* pressure) {
-  const Bmp085Calibration& c = gCalibration;
-  int32_t x1, x2, x3, b3, b5, b6, p;
-  uint32_t b4, b7;
-
-  // Temperature.
-  x1 = (((rawTemperature - (int32_t)c.ac6) * (int32_t)c.ac5) >> 15);
-  // MC is negative and shifting a negative value left is undefined behaviour
-  // before C++20; the multiply below is the same arithmetic without it.
-  x2 = ((int32_t)c.mc * 2048) / (x1 + (int32_t)c.md);
-  b5 = x1 + x2;
-  *temperature = ((b5 + 8) >> 4) / 10.0f;  // datasheet yields 0.1 °C steps
-
-  // Pressure.
-  b6 = b5 - 4000;
-  x1 = ((int32_t)c.b2 * ((b6 * b6) >> 12)) >> 11;
-  x2 = ((int32_t)c.ac2 * b6) >> 11;
-  x3 = x1 + x2;
-  b3 = ((((int32_t)c.ac1 * 4 + x3) << OVERSAMPLING) + 2) >> 2;
-  x1 = ((int32_t)c.ac3 * b6) >> 13;
-  x2 = ((int32_t)c.b1 * ((b6 * b6) >> 12)) >> 16;
-  x3 = ((x1 + x2) + 2) >> 2;
-  b4 = ((uint32_t)c.ac4 * (uint32_t)(x3 + 32768)) >> 15;
-  b7 = ((uint32_t)rawPressure - b3) * (50000 >> OVERSAMPLING);
-  // B7 is unsigned and can exceed 2^31, which is why it is scaled before
-  // rather than after the division in that case.
-  p = (b7 < 0x80000000) ? (int32_t)((b7 * 2) / b4) : (int32_t)((b7 / b4) * 2);
-
-  // Final correction. The datasheet writes these in 32-bit ints, where the
-  // squaring overflows above roughly 2150 hPa — far outside the sensor's
-  // range, but signed overflow is undefined behaviour rather than merely a
-  // wrong number, and it is a cliff the Python node (arbitrary-precision)
-  // does not have. Widening to 64 bits costs one multiply per reading and
-  // makes the two implementations agree on every input, not just plausible
-  // ones.
-  int64_t correction1 = (int64_t)(p >> 8) * (p >> 8);
-  correction1 = (correction1 * 3038) >> 16;
-  int64_t correction2 = ((int64_t)-7357 * p) >> 16;
-  *pressure = (int32_t)(p + ((correction1 + correction2 + 3791) >> 4));
-}
-
-// Altitude in metres from pressure, per the international barometric formula
-// the BMP085 datasheet quotes.
-float bmp085Altitude(int32_t pressurePa) {
-  return 44330.0f * (1.0f - pow(pressurePa / SEA_LEVEL_PA, 1.0f / 5.255f));
-}
+unsigned long dustWindowStartMs = 0;        // loop()-only, no ISR access
+float dustConcentration = NAN;              // NAN until the first window closes
 
 String buildSensorJson(bool shortKeys);
 
@@ -274,6 +109,50 @@ String buildSensorJsonForTransport(bool shortKeys) {
   String json = buildSensorJson(shortKeys);
   unlockSensorStateForTransport();
   return json;
+}
+
+// Pulses are timed with an edge interrupt instead of pulseIn(): pulseIn()
+// blocks for the length of a pulse and sees nothing in between, and the TLS
+// handshake can hold loop() for several seconds — the ISR keeps accumulating
+// low time regardless of what loop() is doing.
+void IRAM_ATTR dustIsr() {
+  unsigned long now = micros();
+  if (digitalRead(DUST_PIN) == LOW) {       // falling edge: pulse starts
+    dustLowStartUs = now;
+    dustPinLow = true;
+  } else if (dustPinLow) {                  // rising edge: pulse ends
+    dustLpoUs += now - dustLowStartUs;      // unsigned math survives rollover
+    dustPinLow = false;
+  }
+}
+
+// Called every loop() pass; closes the LPO window once it is due and caches
+// the concentration. A rollover delayed by a long TLS handshake stays correct
+// because the ratio divides by the *actual* elapsed time, not the nominal
+// window length.
+void updateDustWindow() {
+  unsigned long nowMs = millis();
+  unsigned long elapsedMs = nowMs - dustWindowStartMs;
+  if (elapsedMs < DUST_WINDOW_MS) return;
+
+  noInterrupts();                           // consistent snapshot + reset
+  unsigned long lpoUs = dustLpoUs;
+  dustLpoUs = 0;
+  if (dustPinLow) {
+    // A pulse spans the boundary: credit the elapsed part to the closing
+    // window and restart the low-timer for the new one.
+    unsigned long nowUs = micros();
+    lpoUs += nowUs - dustLowStartUs;
+    dustLowStartUs = nowUs;
+  }
+  interrupts();
+  dustWindowStartMs = nowMs;
+
+  float ratio = (float)lpoUs / (elapsedMs * 1000.0f) * 100.0f;
+  dustConcentration =
+      1.1f * ratio * ratio * ratio - 3.8f * ratio * ratio + 520.0f * ratio + 0.62f;
+
+  Serial.printf("LPO %.2f %% -> %.1f pcs/0.01cf\n", ratio, dustConcentration);
 }
 
 #if ACTIVE_TRANSPORT == TRANSPORT_WIFI
@@ -519,10 +398,15 @@ void transportSetup() {
 }
 
 void transportLoop() {
-  // Push a fresh reading once per second to subscribed, authorized clients.
+  // Push a fresh reading once per second to subscribed, authorized clients —
+  // but only once the first LPO window has produced a value (the payload
+  // carries no "dust" key during warm-up).
   if (deviceConnected && authed && millis() - lastNotifyMs >= 1000) {
     lastNotifyMs = millis();
-    notifySensorJson(dataChar, buildSensorJsonForTransport(false));
+    String json = buildSensorJsonForTransport(false);
+    if (json.indexOf("dust") >= 0) {
+      notifySensorJson(dataChar, json);
+    }
   }
   delay(10);
 }
@@ -533,11 +417,18 @@ void setup() {
   Serial.begin(115200);
   Serial.println("\n--- Sensor Tester Sensor Node ---");
 
-  Wire.begin();
-  if (!bmp085Begin()) {
-    Serial.println("Error: BMP085 not found! (fixed I2C address 0x77)");
-    while (1) delay(1000);
+  pinMode(DUST_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(DUST_PIN), dustIsr, CHANGE);
+  // The ISR only sees edges: a pin that is already low (a stuck or
+  // misbehaving line) would read as 0 % occupancy — "perfectly clean air" —
+  // instead of saturation. Treat an initial low as a pulse in progress so a
+  // stuck-low line reports a huge value, not a clean one.
+  if (digitalRead(DUST_PIN) == LOW) {
+    dustLowStartUs = micros();
+    dustPinLow = true;
   }
+  dustWindowStartMs = millis();
+  Serial.println("First reading after the first full 30-second LPO window.");
 
   transportSetup();
 
@@ -547,6 +438,9 @@ void setup() {
 
 // ============================================================
 void loop() {
+  lockSensorStateForTransport();
+  updateDustWindow();
+  unlockSensorStateForTransport();
   transportLoop();
 }
 
@@ -554,7 +448,7 @@ void loop() {
 // Build sensor JSON (identical payload on every transport).
 // ============================================================
 String buildSensorJson(bool shortKeys) {
-  StaticJsonDocument<512> doc;
+  StaticJsonDocument<256> doc;
 
   if (shortKeys) {
     doc["type"] = SENSOR_NAME;
@@ -568,28 +462,9 @@ String buildSensorJson(bool shortKeys) {
     doc["host"]   = HOSTNAME;
   }
 
-  // Temperature first, and every time: its B5 term feeds the pressure
-  // compensation, so a stale one skews the pressure as the chip warms.
-  int32_t rawTemperature, rawPressure;
-  if (bmp085ReadRawTemperature(&rawTemperature) &&
-      bmp085ReadRawPressure(&rawPressure)) {
-    float temperature;
-    int32_t pressurePa;
-    bmp085Compensate(rawTemperature, rawPressure, &temperature, &pressurePa);
-
-    float pressure = pressurePa / 100.0f;             // Pa -> hPa
-    float altitude = bmp085Altitude(pressurePa);
-
-    if (shortKeys) {
-      doc["temp"]  = temperature;
-      doc["press"] = pressure;
-      doc["alt"]   = altitude;
-    } else {
-      doc["temperature"] = temperature;
-      doc["pressure"]    = pressure;
-      doc["altitude"]    = altitude;
-    }
-  }
+  // Same short/long key ("dust") on both the discovery and REST payloads.
+  // Omitted until the first 30-second LPO window has completed.
+  if (!isnan(dustConcentration)) doc["dust"] = dustConcentration;
 
   String output;
   serializeJson(doc, output);

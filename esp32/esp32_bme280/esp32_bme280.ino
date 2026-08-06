@@ -33,6 +33,7 @@
 
 #if ACTIVE_TRANSPORT == TRANSPORT_WIFI
   #include <WiFi.h>
+  #include "../common/sensor_wifi_runtime.h"
   #include <WiFiUdp.h>
   #include "mbedtls/ssl.h"
   #include "mbedtls/pk.h"
@@ -41,11 +42,13 @@
   #include "mbedtls/ctr_drbg.h"
   #include "mbedtls/net_sockets.h"
   #include "mbedtls/error.h"
+  #include "../common/sensor_tls_runtime.h"
 #else
   #include <BLEDevice.h>
   #include <BLEServer.h>
   #include <BLEUtils.h>
   #include <BLE2902.h>
+  #include "../common/sensor_ble_framing.h"
 
   // Shared Sensor Tester GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
@@ -61,6 +64,30 @@ const char* SENSOR_NAME = "BME280";
 const uint8_t BME280_ADDR = 0x76;
 
 String buildSensorJson(bool shortKeys);
+
+#if ACTIVE_TRANSPORT == TRANSPORT_WIFI
+SemaphoreHandle_t sensorReadMutex = nullptr;
+TaskHandle_t tlsServerTaskHandle = nullptr;
+#endif
+
+void lockSensorStateForTransport() {
+#if ACTIVE_TRANSPORT == TRANSPORT_WIFI
+  xSemaphoreTake(sensorReadMutex, portMAX_DELAY);
+#endif
+}
+
+void unlockSensorStateForTransport() {
+#if ACTIVE_TRANSPORT == TRANSPORT_WIFI
+  xSemaphoreGive(sensorReadMutex);
+#endif
+}
+
+String buildSensorJsonForTransport(bool shortKeys) {
+  lockSensorStateForTransport();
+  String json = buildSensorJson(shortKeys);
+  unlockSensorStateForTransport();
+  return json;
+}
 
 #if ACTIVE_TRANSPORT == TRANSPORT_WIFI
 // ============================================================
@@ -80,17 +107,14 @@ mbedtls_ctr_drbg_context ctr_drbg;
 
 void handleUdpDiscovery();
 void handleTlsClient();
+void tlsServerTask(void* parameter);
 
 void transportSetup() {
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  Serial.print("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  if (!connectSensorWifi(WIFI_SSID, WIFI_PASS)) {
+    Serial.println("Restarting after WiFi setup failure");
+    delay(1000);
+    ESP.restart();
   }
-  Serial.println("\nWiFi connected.");
-  Serial.print("IP: ");
-  Serial.println(WiFi.localIP());
 
   mbedtls_ssl_config_init(&sslConf);
   mbedtls_x509_crt_init(&srvcert);
@@ -98,29 +122,40 @@ void transportSetup() {
   mbedtls_entropy_init(&entropy);
   mbedtls_ctr_drbg_init(&ctr_drbg);
 
-  mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0);
-  int ret = mbedtls_x509_crt_parse(&srvcert, (const unsigned char*)SERVER_CERT, strlen(SERVER_CERT) + 1);
-  if (ret != 0) {
-    Serial.printf("Error parsing certificate: -0x%04X\n", -ret);
-  }
-  ret = mbedtls_pk_parse_key(&pkey, (const unsigned char*)SERVER_KEY, strlen(SERVER_KEY) + 1, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
-  if (ret != 0) {
-    Serial.printf("Error parsing private key: -0x%04X\n", -ret);
+  if (!configureSensorTls(&sslConf, &srvcert, &pkey, &entropy, &ctr_drbg,
+                          SERVER_CERT, SERVER_KEY)) {
+    Serial.println("TLS initialization failed; restarting");
+    delay(1000);
+    ESP.restart();
+    return;
   }
 
-  mbedtls_ssl_config_defaults(&sslConf, MBEDTLS_SSL_IS_SERVER,
-    MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
-  mbedtls_ssl_conf_rng(&sslConf, mbedtls_ctr_drbg_random, &ctr_drbg);
-  mbedtls_ssl_conf_own_cert(&sslConf, &srvcert, &pkey);
+  sensorReadMutex = xSemaphoreCreateMutex();
+  if (sensorReadMutex == nullptr) {
+    Serial.println("Sensor mutex allocation failed; restarting");
+    delay(1000);
+    ESP.restart();
+    return;
+  }
 
   tcpServer.begin();
   udp.begin(UDP_PORT);
+  if (xTaskCreate(tlsServerTask, "sensor-tls", 12288, nullptr, 1,
+                  &tlsServerTaskHandle) != pdPASS) {
+    Serial.println("TLS task creation failed; restarting");
+    delay(1000);
+    ESP.restart();
+    return;
+  }
   Serial.println("HTTPS on port 9132, UDP on port 9133");
 }
 
 void transportLoop() {
+  if (!sensorWifiReady()) {
+    delay(10);
+    return;
+  }
   handleUdpDiscovery();
-  handleTlsClient();
   delay(1);
 }
 
@@ -133,7 +168,7 @@ void handleUdpDiscovery() {
   buffer[len] = '\0';
   if (strstr(buffer, "SENSOR_TESTER") == NULL) return;
 
-  String json = buildSensorJson(true);
+  String json = buildSensorJsonForTransport(true);
   udp.beginPacket(udp.remoteIP(), udp.remotePort());
   udp.print(json);
   udp.endPacket();
@@ -151,18 +186,29 @@ static int tlsRecv(void* ctx, unsigned char* buf, size_t len) {
   return client->read(buf, len);
 }
 
+void tlsServerTask(void* parameter) {
+  (void)parameter;
+  for (;;) {
+    if (WiFi.status() == WL_CONNECTED) handleTlsClient();
+    vTaskDelay(pdMS_TO_TICKS(1));
+  }
+}
+
 void handleTlsClient() {
   WiFiClient client = tcpServer.accept();
   if (!client) return;
 
   mbedtls_ssl_context ssl;
   mbedtls_ssl_init(&ssl);
-  mbedtls_ssl_setup(&ssl, &sslConf);
+  if (mbedtls_ssl_setup(&ssl, &sslConf) != 0) {
+    mbedtls_ssl_free(&ssl);
+    client.stop();
+    return;
+  }
   mbedtls_ssl_set_bio(&ssl, &client, tlsSend, tlsRecv, NULL);
 
-  // Overall deadline for the whole client interaction: tlsRecv only bounds a
-  // single read, so without this a stalled client blocks loop() - and with it
-  // UDP discovery - indefinitely.
+  // Overall deadline for one client interaction. The TLS server has its own
+  // task, so a stalled client cannot block discovery or the sensor loop.
   const unsigned long tlsStart = millis();
   int ret;
   do {
@@ -177,12 +223,13 @@ void handleTlsClient() {
   }
 
   char reqBuf[1024];
-  int reqLen = 0;
-  do {
-    ret = mbedtls_ssl_read(&ssl, (unsigned char*)reqBuf + reqLen, sizeof(reqBuf) - reqLen - 1);
-  } while (ret == MBEDTLS_ERR_SSL_WANT_READ && millis() - tlsStart < 4000);
-  if (ret > 0) reqLen = ret;
-  reqBuf[reqLen] = '\0';
+  const int reqLen = readSensorHttpRequest(
+      &ssl, reqBuf, sizeof(reqBuf), tlsStart, 4000);
+  if (reqLen <= 0) {
+    mbedtls_ssl_free(&ssl);
+    client.stop();
+    return;
+  }
 
   String headers(reqBuf);
   String apiKey = "";
@@ -197,14 +244,25 @@ void handleTlsClient() {
   }
 
   String response;
-  if (apiKey != String(API_KEY)) {
-    response = "HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n";
+  const bool validTarget =
+      headers.startsWith("GET / HTTP/1.1\r\n") ||
+      headers.startsWith("GET / HTTP/1.0\r\n");
+  if (!validTarget) {
+    response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n"
+               "Connection: close\r\n\r\n";
+  } else if (apiKey != String(API_KEY)) {
+    response = "HTTP/1.1 401 Unauthorized\r\nContent-Length: 0\r\n"
+               "Connection: close\r\n\r\n";
   } else {
-    String json = buildSensorJson(false);
-    response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n" + json;
+    String json = buildSensorJsonForTransport(false);
+    response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+               "Content-Length: " + String(json.length()) +
+               "\r\nConnection: close\r\n\r\n" + json;
   }
 
-  mbedtls_ssl_write(&ssl, (const unsigned char*)response.c_str(), response.length());
+  if (!writeSensorTlsResponse(&ssl, response, tlsStart, 4000)) {
+    Serial.println("TLS response write failed");
+  }
   mbedtls_ssl_close_notify(&ssl);
   mbedtls_ssl_free(&ssl);
   client.stop();
@@ -243,7 +301,7 @@ class AuthCallbacks : public BLECharacteristicCallbacks {
 // Serve the latest reading only to an authorized client.
 class DataCallbacks : public BLECharacteristicCallbacks {
   void onRead(BLECharacteristic* characteristic) override {
-    characteristic->setValue(authed ? buildSensorJson(false).c_str() : "{}");
+    characteristic->setValue(authed ? buildSensorJsonForTransport(false).c_str() : "{}");
   }
 };
 
@@ -277,9 +335,8 @@ void transportLoop() {
   // Push a fresh reading once per second to subscribed, authorized clients.
   if (deviceConnected && authed && millis() - lastNotifyMs >= 1000) {
     lastNotifyMs = millis();
-    String json = buildSensorJson(false);
-    dataChar->setValue(json.c_str());
-    dataChar->notify();
+    String json = buildSensorJsonForTransport(false);
+    notifySensorJson(dataChar, json);
   }
   delay(10);
 }

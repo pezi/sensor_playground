@@ -33,6 +33,7 @@ Usage (the sibling ble_transport.py is the BLE counterpart):
 """
 
 import hmac
+import inspect
 import json
 import socket
 import sys
@@ -120,13 +121,22 @@ def start_discovery_thread(sensor_name, hostname, port, read_discovery=None):
 
 
 def run_rest_server(
-    sensor_name, api_key, hostname, read, ssl_cert, ssl_key, allow_empty=False
+    sensor_name,
+    api_key,
+    hostname,
+    read,
+    ssl_cert,
+    ssl_key,
+    allow_empty=False,
+    empty_error="sensor_read_failed",
 ):
     """Serve read() over HTTPS REST with X-Api-Key auth. Blocks forever.
 
     [allow_empty] returns 200 with a metadata-only body when read() yields
     nothing, instead of 503. Used by the GPS node, whose fixless warm-up
-    state is normal rather than an error.
+    state is normal rather than an error. [empty_error] is the machine-readable
+    reason returned with a 503; PPD42NS uses ``warming_up`` until its first
+    integration window, while other nodes retain ``sensor_read_failed``.
     """
     from flask import Flask, jsonify, request
 
@@ -139,7 +149,7 @@ def run_rest_server(
 
         data = read()
         if data is None and not allow_empty:
-            return jsonify({"error": "Sensor read failed"}), 503
+            return jsonify({"error": empty_error}), 503
 
         response = {"sensor": sensor_name, "host": hostname}
         response.update(data or {})
@@ -182,7 +192,13 @@ class WsPushServer:
                 await self._on_connect(websocket)
             if self._on_message is not None:
                 async for message in websocket:
-                    self._on_message(message)
+                    response = self._on_message(message)
+                    if inspect.isawaitable(response):
+                        response = await response
+                    if response is not None:
+                        if not isinstance(response, str):
+                            response = json.dumps(response)
+                        await websocket.send(response)
             else:
                 await websocket.wait_closed()
         finally:

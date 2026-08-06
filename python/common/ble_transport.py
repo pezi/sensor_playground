@@ -31,6 +31,7 @@ import json
 import signal
 
 import mgmt_advertiser
+from ble_framing import frame_payload
 
 from bless import (
     BlessServer,
@@ -53,6 +54,7 @@ NOTIFY_INTERVAL = 1.0
 MOTION_NOTIFY_INTERVAL = 0.25
 
 _DISCONNECT_POLL = 1.0  # seconds between connection checks
+_NOTIFICATION_GAP = 0.01  # let the controller transmit each framed packet
 
 # Keys every payload carries; a payload holding only these has no reading.
 _METADATA_KEYS = frozenset({"sensor", "host"})
@@ -70,6 +72,7 @@ class BleTransport:
         self._was_connected = False
         self._watch_task = None
         self._advertiser = None
+        self._message_id = 0
         # Display nodes pass a callback here; sensor nodes leave it None and
         # the command characteristic is then not added at all.
         self._on_command = on_command
@@ -180,8 +183,11 @@ class BleTransport:
         if not self.authed:
             return
         characteristic = self._server.get_characteristic(DATA_CHAR_UUID)
-        characteristic.value = bytearray(self._last_payload)
-        self._server.update_value(SERVICE_UUID, DATA_CHAR_UUID)
+        self._message_id = (self._message_id + 1) & 0xFF
+        for packet in frame_payload(self._last_payload, self._message_id):
+            characteristic.value = bytearray(packet)
+            self._server.update_value(SERVICE_UUID, DATA_CHAR_UUID)
+            await asyncio.sleep(_NOTIFICATION_GAP)
 
     # -- GATT callbacks (run inside the BlueZ/CoreBluetooth event handling) ---
 

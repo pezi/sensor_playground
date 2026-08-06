@@ -34,6 +34,7 @@
 
 #if ACTIVE_TRANSPORT == TRANSPORT_WIFI
   #include <WiFi.h>
+  #include "../common/sensor_wifi_runtime.h"
   #include <WiFiUdp.h>
   #include <WebSocketsServer.h>
 #else
@@ -41,6 +42,7 @@
   #include <BLEServer.h>
   #include <BLEUtils.h>
   #include <BLE2902.h>
+  #include "../common/sensor_ble_framing.h"
 
   // Shared Sensor Tester GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
@@ -97,15 +99,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
 void handleUdpDiscovery();
 
 void transportSetup() {
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  Serial.print("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  if (!connectSensorWifi(WIFI_SSID, WIFI_PASS)) {
+    Serial.println("Restarting after WiFi setup failure");
+    delay(1000);
+    ESP.restart();
   }
-  Serial.println("\nWiFi connected.");
-  Serial.print("IP: ");
-  Serial.println(WiFi.localIP());
 
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);
@@ -117,6 +115,10 @@ void transportSetup() {
 }
 
 void transportLoop() {
+  if (!sensorWifiReady()) {
+    delay(10);
+    return;
+  }
   webSocket.loop();
   handleUdpDiscovery();
 
@@ -213,8 +215,7 @@ void transportLoop() {
   if (deviceConnected && authed && millis() - lastNotifyMs >= 250) {
     lastNotifyMs = millis();
     String json = buildSensorJson(false);
-    dataChar->setValue(json.c_str());
-    dataChar->notify();
+    notifySensorJson(dataChar, json);
   }
   delay(10);
 }
