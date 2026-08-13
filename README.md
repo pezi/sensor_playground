@@ -169,7 +169,7 @@ esp32/                     Arduino sketches (one folder per sensor)
     secrets.h.example      Wi-Fi credentials, API key, TLS cert
     README.md              Wiring, libraries, testing
   generate_cert.sh         Creates a self-signed cert and writes it to secrets.h
-  CameraWebServer/         Standalone ESP32-CAM streamer (not part of the app)
+  CameraWebServer/         Standalone ESP32-CAM node
   CameraWebServerWS/       WebSocket ESP32-CAM node (status, controls and
                            JPEG video over ws:// with X-Api-Key auth)
   CameraWebServerBLE/      BLE ESP32-CAM node (status, controls and JPEG
