@@ -115,7 +115,10 @@ bool oledWrite(uint8_t control, const uint8_t* data, size_t len) {
 
 // Reset the internal memory write index to the begin.
 bool oledResetPosition() {
-  const uint8_t reset[] = {0xB0, 0x00, 0x10};
+  const uint8_t reset[] = {
+    0x21, 0x00, 0x7F,  // set column range from 0 to 127
+    0x22, 0x00, 0x07   // set page range from 0 to 7
+  };
   return oledWrite(0x00, reset, sizeof(reset));
 }
 

@@ -195,13 +195,37 @@ class AuthCallbacks : public BLECharacteristicCallbacks {
     }
     authed = (val == API_KEY);
     Serial.println(authed ? "Client authorized" : "Bad API key");
+    // Push the current distance right after a successful authorization.
+    if (authed) {
+      StaticJsonDocument<64> doc;
+      if (lastSentValid) {
+        doc["distance"] = lastSentMm;
+      } else {
+        doc["distance"] = nullptr;
+      }
+      String out;
+      serializeJson(doc, out);
+      notifySensorJson(dataChar, out);
+    }
   }
 };
 
-// Never serve the cached last measurement to an unauthorized client.
+// Serve the cached last measurement only to an authorized client.
 class DataCallbacks : public BLECharacteristicCallbacks {
   void onRead(BLECharacteristic* characteristic) override {
-    if (!authed) characteristic->setValue("{}");
+    if (authed) {
+      StaticJsonDocument<64> doc;
+      if (lastSentValid) {
+        doc["distance"] = lastSentMm;
+      } else {
+        doc["distance"] = nullptr;
+      }
+      String out;
+      serializeJson(doc, out);
+      characteristic->setValue(out.c_str());
+    } else {
+      characteristic->setValue("{}");
+    }
   }
 };
 

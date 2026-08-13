@@ -103,7 +103,8 @@ class SSD1306Display:
 
     def _reset_position(self):
         """Reset the internal memory write index to the begin."""
-        self._write(0x00, [0xB0, 0x00, 0x10])
+        # Set column range (0-127) and page range (0-7) for horizontal mode
+        self._write(0x00, [0x21, 0x00, 0x7F, 0x22, 0x00, 0x07])
 
     def clear(self):
         """Blank the display."""

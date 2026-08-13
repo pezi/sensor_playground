@@ -91,7 +91,12 @@ async def measure_loop(sensor, publish):
     ever_published = False
 
     while True:
-        mm = sensor.read_mm()
+        try:
+            mm = sensor.read_mm()
+        except OSError as e:
+            print(f"I2C read failed: {e}")
+            await asyncio.sleep(MEASURE_INTERVAL)
+            continue
         now = loop.time()
         changed = (
             not ever_published

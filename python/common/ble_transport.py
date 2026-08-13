@@ -246,7 +246,10 @@ async def _serve(transport, tick, interval):
     try:
         while not stopping.is_set():
             if tick is not None:
-                await tick()
+                try:
+                    await tick()
+                except Exception as exc:
+                    print(f"Error in BLE transport loop tick: {exc}")
             await asyncio.sleep(interval)
     finally:
         # Release the advertising instance, otherwise it stays registered and

@@ -11,8 +11,13 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SECRETS="$SCRIPT_DIR/secrets.h"
+if [ -f "secrets.h" ]; then
+  SECRETS="secrets.h"
+else
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  SECRETS="$SCRIPT_DIR/secrets.h"
+fi
+
 CERT_FILE=$(mktemp)
 KEY_FILE=$(mktemp)
 trap 'rm -f "$CERT_FILE" "$KEY_FILE"' EXIT

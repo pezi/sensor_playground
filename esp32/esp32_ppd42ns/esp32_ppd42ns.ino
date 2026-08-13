@@ -77,10 +77,11 @@ const int DUST_PIN = 34;
 
 const unsigned long DUST_WINDOW_MS = 30000;
 
-// Written by the ISR, read under noInterrupts() in updateDustWindow().
+// Written by the ISR, read under a spinlock in updateDustWindow().
 volatile unsigned long dustLpoUs = 0;       // low time accumulated this window
 volatile unsigned long dustLowStartUs = 0;  // micros() of the falling edge
 volatile bool dustPinLow = false;           // inside a low pulse right now?
+portMUX_TYPE gDustMux = portMUX_INITIALIZER_UNLOCKED;
 
 unsigned long dustWindowStartMs = 0;        // loop()-only, no ISR access
 float dustConcentration = NAN;              // NAN until the first window closes
@@ -117,6 +118,7 @@ String buildSensorJsonForTransport(bool shortKeys) {
 // low time regardless of what loop() is doing.
 void IRAM_ATTR dustIsr() {
   unsigned long now = micros();
+  portENTER_CRITICAL_ISR(&gDustMux);
   if (digitalRead(DUST_PIN) == LOW) {       // falling edge: pulse starts
     dustLowStartUs = now;
     dustPinLow = true;
@@ -124,6 +126,7 @@ void IRAM_ATTR dustIsr() {
     dustLpoUs += now - dustLowStartUs;      // unsigned math survives rollover
     dustPinLow = false;
   }
+  portEXIT_CRITICAL_ISR(&gDustMux);
 }
 
 // Called every loop() pass; closes the LPO window once it is due and caches
@@ -135,7 +138,7 @@ void updateDustWindow() {
   unsigned long elapsedMs = nowMs - dustWindowStartMs;
   if (elapsedMs < DUST_WINDOW_MS) return;
 
-  noInterrupts();                           // consistent snapshot + reset
+  portENTER_CRITICAL(&gDustMux);            // consistent snapshot + reset
   unsigned long lpoUs = dustLpoUs;
   dustLpoUs = 0;
   if (dustPinLow) {
@@ -145,7 +148,7 @@ void updateDustWindow() {
     lpoUs += nowUs - dustLowStartUs;
     dustLowStartUs = nowUs;
   }
-  interrupts();
+  portEXIT_CRITICAL(&gDustMux);
   dustWindowStartMs = nowMs;
 
   float ratio = (float)lpoUs / (elapsedMs * 1000.0f) * 100.0f;
