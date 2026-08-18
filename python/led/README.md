@@ -13,9 +13,10 @@ state arrives as a notification and the command as a write.
 It is the Python/SoC counterpart of `../../esp32/esp32_led/` and supports the
 same two transports (Wi-Fi and BLE).
 
-> **The only two-way node.** Every other node either produces data (the
-> sensors) or only consumes it (the SSD1306 display). This one does both, which
-> is what lets a physical button press show up in the app.
+> **A two-way node.** Most nodes either produce data (the sensors) or only
+> consume it (the SSD1306 display). The actuators — this one and the TM1637
+> clock — do both, which is what lets a physical button press show up in the
+> app.
 
 The node owns the LED state; the app renders what the node last reported rather
 than what it asked for, so a command that never arrived cannot leave the app

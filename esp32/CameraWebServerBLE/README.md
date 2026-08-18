@@ -7,7 +7,10 @@ HTTP) and [`CameraWebServerWS`](../CameraWebServerWS/) (WebSocket)
 sketches. Camera status, camera controls and the JPEG video all travel
 over one GATT connection using the shared Sensor Tester service
 contract: the client writes the API key to the auth characteristic
-before the node responds to anything.
+before the node responds to anything. Setting `API_KEY` to the empty
+string (`""`) in `secrets.h` disables the check — the camera starts
+authorized and no auth write is needed. Use this for clients without an
+API key concept, e.g. the ESP32-CAM app with an empty API key setting.
 
 **BLE is slow.** Depending on the negotiated MTU and connection
 interval, throughput is roughly 20–100 KB/s, so the frame size is
@@ -102,8 +105,8 @@ button can be used again.
 
 On the first run the script creates `secrets.h` from
 `secrets.h.example`; fill in your API key (min. 8 characters, must match
-the key configured in the Sensor Tester app), then re-run. No Wi-Fi
-credentials are needed.
+the key configured in the Sensor Tester / ESP32-CAM app — or empty to
+disable the key check), then re-run. No Wi-Fi credentials are needed.
 
 The script uses the AI-Thinker board definition
 (`esp32:esp32:esp32cam`: PSRAM enabled, 3 MB app partition). For a

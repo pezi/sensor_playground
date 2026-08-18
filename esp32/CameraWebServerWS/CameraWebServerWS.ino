@@ -85,11 +85,18 @@ unsigned long lastFrameMs = 0;
 int ledDuty = 0;
 #endif
 
-// Clients must present this header on the WebSocket handshake.
+// Clients must present this header on the WebSocket handshake — unless
+// API_KEY in secrets.h is empty (""): then the validator is never
+// registered (see setup()) and every client connects, with or without the
+// header. This keeps the sketch usable from apps without an API key
+// concept (e.g. the ESP32-CAM app with an empty key setting).
 const char *MANDATORY_HEADERS[] = {"X-Api-Key"};
 const size_t MANDATORY_HEADER_COUNT = 1;
 
 bool validateApiKey(String headerName, String headerValue) {
+  if (strlen(API_KEY) == 0) {
+    return true;  // key check disabled
+  }
   if (headerName.equalsIgnoreCase("X-Api-Key")) {
     headerValue.trim();
     return headerValue == String(API_KEY);
@@ -504,8 +511,14 @@ void setup() {
 
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);
-  webSocket.onValidateHttpHeader(validateApiKey, MANDATORY_HEADERS,
-                                 MANDATORY_HEADER_COUNT);
+  // An empty API_KEY disables the key check: registering the validator
+  // would still make the X-Api-Key header mandatory, so skip it entirely.
+  if (strlen(API_KEY) > 0) {
+    webSocket.onValidateHttpHeader(validateApiKey, MANDATORY_HEADERS,
+                                   MANDATORY_HEADER_COUNT);
+  } else {
+    Serial.println("API key check disabled (empty API_KEY)");
+  }
 
   udp.begin(UDP_PORT);
   Serial.printf("WebSocket on port %d, UDP discovery on port %d\n",

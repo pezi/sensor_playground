@@ -5,9 +5,10 @@ off, and the node reports the resulting state back. An optional push button
 wired to the same node toggles the same LED locally, so the app follows changes
 it did not cause.
 
-> **The only two-way node.** Every other node either produces data (the
-> sensors) or only consumes it (the SSD1306 display). This one does both, which
-> is what lets a physical button press show up in the app.
+> **A two-way node.** Most nodes either produce data (the sensors) or only
+> consume it (the SSD1306 display). The actuators — this one and the TM1637
+> clock — do both, which is what lets a physical button press show up in the
+> app.
 
 The node owns the LED state; the app renders whatever the node last reported
 rather than what it asked for, so a command that never arrived cannot leave the

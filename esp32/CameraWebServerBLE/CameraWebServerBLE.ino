@@ -118,7 +118,15 @@ const unsigned long CHUNK_DELAY_MS = 4;
 BLECharacteristic* dataChar = nullptr;
 BLECharacteristic* videoChar = nullptr;
 bool deviceConnected = false;
-bool authed = false;
+
+// An empty API_KEY in secrets.h disables the key check entirely: clients
+// are authorized without writing the auth characteristic. This keeps the
+// sketch usable from apps without an API key concept (e.g. the ESP32-CAM
+// app with an empty key setting). A client that still writes a key (the
+// Sensor Playground app always does) stays authorized too.
+static bool apiKeyDisabled() { return API_KEY[0] == '\0'; }
+
+bool authed = false;  // reset to apiKeyDisabled() in setup()/onDisconnect
 bool streamOn = false;
 
 // One still frame was requested (CMD_SNAPSHOT); served by the next
@@ -376,7 +384,7 @@ class ServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer* server) override { deviceConnected = true; }
   void onDisconnect(BLEServer* server) override {
     deviceConnected = false;
-    authed = false;
+    authed = apiKeyDisabled();
     streamOn = false;
     snapshotPending = false;
     gMtu = 23;
@@ -401,7 +409,7 @@ class AuthCallbacks : public BLECharacteristicCallbacks {
                                 val[val.length() - 1] == '\n')) {
       val.remove(val.length() - 1);
     }
-    authed = (val == API_KEY);
+    authed = apiKeyDisabled() || (val == API_KEY);
     Serial.println(authed ? "Client authorized" : "Bad API key");
     // Push the current status right after a successful authorization, so
     // the app can render its controls without an extra request.
@@ -563,6 +571,13 @@ void setup() {
 #if defined(LED_GPIO_NUM)
   setupLedFlash();
 #endif
+
+  // With an empty API_KEY the camera starts authorized (no auth write
+  // needed); with a key set, every connection must authorize first.
+  authed = apiKeyDisabled();
+  if (authed) {
+    Serial.println("API key check disabled (empty API_KEY)");
+  }
 
   BLEDevice::init(SENSOR_NAME);
   // Video chunks scale with the MTU; ask for the maximum so a capable

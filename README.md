@@ -41,6 +41,7 @@ a Raspberry Pi (or the reverse) without touching the app.
     - [WebSocket (streaming, event and display Wi-Fi nodes)](#websocket-streaming-event-and-display-wi-fi-nodes)
     - [BLE GATT](#ble-gatt)
       - [Display command channel](#display-command-channel)
+      - [Actuator command channels](#actuator-command-channels)
   - [Security notes](#security-notes)
   - [Troubleshooting](#troubleshooting)
   - [Contributing](#contributing)
@@ -72,9 +73,9 @@ Nodes come in five flavours, and the app opens a different screen for each:
 |------|-----------|---------|
 | **Pollable** | App requests a reading (HTTPS every 3 s, or BLE read/notify at 1 Hz) | Environment, light, optical, GPS, dust |
 | **Streaming** | Node pushes continuously (WebSocket or BLE notify, every 250 ms) | IMU 10DOF, MMA7660, MPU6050 |
-| **Event push** | Node sends one message per event | PAJ7620 gesture, VL53L0X distance, contact sensors, rotary angle |
+| **Event push** | Node sends one message per event | PAJ7620 gesture, VL53L0X distance, 125KHz RFID reader, NFC tag content, contact sensors, rotary angle |
 | **Display** | Reverse direction — the **app** sends bitmaps to the node | SSD1306 OLED |
-| **Actuator** | Both directions — the app switches it, the node reports the result | LED (+ optional local button) |
+| **Actuator** | Both directions — the app commands it, the node reports the result | LED (+ optional local button), TM1637 4-digit clock |
 
 The Python sensor nodes additionally support an **emulation mode**
 (`"emulation": true` in `config.json`) that generates plausible readings with no
@@ -84,7 +85,7 @@ hardware attached, so you can exercise the app before wiring anything up.
 
 ## Supported sensors
 
-25 sensors and one display, each available for both platforms.
+27 sensors, one display and two actuators, each available for both platforms.
 
 ### Environment & air quality
 
@@ -126,6 +127,8 @@ hardware attached, so you can exercise the app before wiring anything up.
 |--------|---------|-----|
 | PAJ7620 | Hand gestures (9 basic) | I²C |
 | VL53L0X | Distance (time-of-flight laser) | I²C |
+| Grove 125KHz RFID Reader | EM4100 tag id (5-byte hex) | Serial |
+| Grove NFC Tag (M24LR64E) | NDEF content written over RF (text/URI/data) | I²C |
 | Button, Hall, Magnetic switch, PIR, Vibration, Line Finder | Active / inactive | Digital |
 | Grove Rotary Angle Sensor | Knob position (raw ADC + angle) | Analog |
 
@@ -153,10 +156,14 @@ rather than assuming one of them.
 | Device | Accepts | Reports | Bus |
 |--------|---------|---------|-----|
 | LED | On, off, toggle | Its current state | Digital |
+| Grove 4-Digit Display (TM1637) | Time (`hh:mm`), brightness | Its displayed state | Digital (2-wire) |
 
-The only two-way node: the app switches the LED and the node reports the
-resulting state back, so an optional push button wired to the same node shows
-up in the app as well.
+The actuators are two-way nodes: the app commands them and the node reports
+the resulting state back. For the LED that is what makes an optional push
+button wired to the node show up in the app; for the TM1637 clock it is what
+keeps the app honest about the time the display actually shows — once set,
+the node advances the minute and blinks the colon on its own, publishing each
+minute rollover.
 
 ---
 
@@ -169,7 +176,7 @@ esp32/                     Arduino sketches (one folder per sensor)
     secrets.h.example      Wi-Fi credentials, API key, TLS cert
     README.md              Wiring, libraries, testing
   generate_cert.sh         Creates a self-signed cert and writes it to secrets.h
-  CameraWebServer/         Standalone ESP32-CAM node
+  CameraWebServer/         HTTP ESP32-CAM node
   CameraWebServerWS/       WebSocket ESP32-CAM node (status, controls and
                            JPEG video over ws:// with X-Api-Key auth)
   CameraWebServerBLE/      BLE ESP32-CAM node (status, controls and JPEG
@@ -349,7 +356,7 @@ JSON message per event or interval:
 | Service | `d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f` | Advertised under the sensor name |
 | Data | `d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f` | Read — UTF-8 JSON; Notify — framed UTF-8 JSON |
 | Auth | `d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f` | Write — plain API key |
-| Command | `d1a51b00-0004-4a7e-9b3c-0a1b2c3d4e5f` | Write — display nodes only |
+| Command | `d1a51b00-0004-4a7e-9b3c-0a1b2c3d4e5f` | Write — display and actuator nodes only |
 
 Flow: connect → write the API key to the auth characteristic → read or subscribe
 to the data characteristic. Reads return `{}` until authenticated, and a
@@ -377,6 +384,27 @@ followed by a show command:
 
 Chunks must arrive contiguously; writing offset 0 restarts the frame, and a
 show on an incomplete frame is refused rather than drawn.
+
+#### Actuator command channels
+
+The actuator nodes use the same command characteristic for short binary
+commands; their state comes back over the data characteristic as JSON, like a
+sensor reading.
+
+LED:
+
+| Packet | Effect |
+|--------|--------|
+| `0x01 <0x00\|0x01>` | Switch off / on |
+| `0x02` | Toggle |
+
+TM1637 clock:
+
+| Packet | Effect |
+|--------|--------|
+| `0x01 <hh> <mm>` | Set the displayed time (rejected unless `hh` ≤ 23 and `mm` ≤ 59) |
+| `0x02 <0..7>` | Set the brightness (clamped) |
+| `0x03` | Re-notify the current state |
 
 ---
 

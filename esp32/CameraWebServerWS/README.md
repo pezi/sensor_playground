@@ -31,7 +31,11 @@ port. The `chip` key names the detected sensor (`OV2640`, `OV3660`,
 ## WebSocket protocol
 
 Clients must send the shared API key in the `X-Api-Key` header of the
-WebSocket upgrade request; the handshake is rejected otherwise.
+WebSocket upgrade request; the handshake is rejected otherwise. Setting
+`API_KEY` to the empty string (`""`) in `secrets.h` disables the check
+entirely — every client connects, with or without the header. Use this
+for clients without an API key concept, e.g. the ESP32-CAM app with an
+empty API key setting.
 
 ### App → node (TEXT frames, JSON)
 
@@ -87,8 +91,9 @@ least one client is streaming, matching the HTTP firmware's behavior.
 
 On the first run the script creates `secrets.h` from
 `secrets.h.example`; fill in your Wi-Fi credentials, API key (min. 8
-characters, must match the key configured in the Sensor Tester app) and
-host name, then re-run.
+characters, must match the key configured in the Sensor Tester /
+ESP32-CAM app — or empty to disable the key check) and host name, then
+re-run.
 
 The script uses the AI-Thinker board definition
 (`esp32:esp32:esp32cam`: PSRAM enabled, 3 MB app partition). For a

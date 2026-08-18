@@ -2,7 +2,7 @@
  * Sensor Tester LED Node — ESP32 + LED (+ optional push button)
  *
  * Implements the *actuator* variant of the Sensor Tester Sensor Interface.
- * This is the only node that talks in both directions: the app sends a
+ * Like the TM1637 clock it talks in both directions: the app sends a
  * switch command and the node reports the resulting state back, because the
  * LED can also be toggled by a push button wired to the node itself. The
  * node therefore owns the state and the app only ever renders what the node
