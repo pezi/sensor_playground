@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — BME680 (Python)
+Sensor Playground Sensor Node — BME680 (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a BME680 I2C sensor (temperature, humidity,
 pressure, IAQ).
 
@@ -20,6 +20,7 @@ import math
 import random
 import socket
 import sys
+import threading
 import time
 from collections import deque
 from pathlib import Path
@@ -29,6 +30,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "common"))
 
 import wifi_transport as wifi
+from bme680_reliable import PimoroniBME680Adapter
 
 # -- Sensor ------------------------------------------------------------------
 
@@ -44,31 +46,48 @@ class BME680Sensor:
         import bme680
         from smbus2 import SMBus
 
-        self.sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY, SMBus(i2c_bus))
-        self.sensor.set_humidity_oversample(bme680.OS_2X)
-        self.sensor.set_pressure_oversample(bme680.OS_4X)
-        self.sensor.set_temperature_oversample(bme680.OS_8X)
-        self.sensor.set_filter(bme680.FILTER_SIZE_3)
-        self.sensor.set_gas_status(bme680.ENABLE_GAS_MEAS)
-        self.sensor.set_gas_heater_temperature(320)
-        self.sensor.set_gas_heater_duration(150)
+        raw_sensor = bme680.BME680(
+            bme680.I2C_ADDR_PRIMARY, SMBus(i2c_bus)
+        )
+        raw_sensor.set_humidity_oversample(bme680.OS_2X)
+        raw_sensor.set_pressure_oversample(bme680.OS_4X)
+        raw_sensor.set_temperature_oversample(bme680.OS_8X)
+        raw_sensor.set_filter(bme680.FILTER_SIZE_3)
+        raw_sensor.set_gas_status(bme680.ENABLE_GAS_MEAS)
+        raw_sensor.set_gas_heater_temperature(320)
+        raw_sensor.set_gas_heater_duration(150)
+        self.sensor = PimoroniBME680Adapter(
+            raw_sensor,
+            temperature_oversampling=bme680.OS_8X,
+            pressure_oversampling=bme680.OS_4X,
+            humidity_oversampling=bme680.OS_2X,
+            heater_duration_ms=150,
+        )
+        self._initialize_state()
+        self.name = "BME680"
+
+    def _initialize_state(self):
+        self._read_lock = threading.Lock()
         self._gas_data = deque([0] * self._GAS_BURN_IN, maxlen=self._GAS_BURN_IN)
         self._last_iaq = 0
-        self.name = "BME680"
 
     def read(self):
         """Return full-key readings for the REST API."""
-        if not self.sensor.get_sensor_data():
-            return None
-        data = self.sensor.data
-        return {
-            "temperature": round(data.temperature, 1),
-            "humidity": round(data.humidity, 1),
-            "pressure": round(data.pressure, 2),
-            "iaq": self._calculate_iaq(
-                int(data.gas_resistance), data.humidity
-            ),
-        }
+        with self._read_lock:
+            if not self.sensor.get_sensor_data():
+                return None
+            data = self.sensor.data
+            iaq = self._last_iaq
+            if data.gas_valid and data.heat_stable:
+                iaq = self._calculate_iaq(
+                    int(data.gas_resistance), data.humidity
+                )
+            return {
+                "temperature": round(data.temperature, 1),
+                "humidity": round(data.humidity, 1),
+                "pressure": round(data.pressure, 2),
+                "iaq": iaq,
+            }
 
     def read_discovery(self):
         """Return short-key readings for the UDP discovery response."""
@@ -132,24 +151,37 @@ class EmulatedBME680Sensor(BME680Sensor):
 
     def __init__(self):
         self.name = "BME680"
-        self._gas_data = deque([0] * self._GAS_BURN_IN, maxlen=self._GAS_BURN_IN)
-        self._last_iaq = 0
+        self._initialize_state()
         self._gas = 120000.0
 
     def read(self):
-        t = time.time()
-        self._gas = min(max(self._gas + random.uniform(-2000, 2000), 20000.0), 500000.0)
-        humidity = 45.0 + 8.0 * math.sin(t / 97.0) + random.uniform(-0.5, 0.5)
-        return {
-            "temperature": round(
-                22.0 + 2.0 * math.sin(t / 60.0) + random.uniform(-0.1, 0.1), 1
-            ),
-            "humidity": round(humidity, 1),
-            "pressure": round(
-                1013.0 + 3.0 * math.sin(t / 300.0) + random.uniform(-0.2, 0.2), 2
-            ),
-            "iaq": self._calculate_iaq(int(self._gas), humidity),
-        }
+        with self._read_lock:
+            t = time.time()
+            self._gas = min(
+                max(self._gas + random.uniform(-2000, 2000), 20000.0),
+                500000.0,
+            )
+            humidity = (
+                45.0
+                + 8.0 * math.sin(t / 97.0)
+                + random.uniform(-0.5, 0.5)
+            )
+            return {
+                "temperature": round(
+                    22.0
+                    + 2.0 * math.sin(t / 60.0)
+                    + random.uniform(-0.1, 0.1),
+                    1,
+                ),
+                "humidity": round(humidity, 1),
+                "pressure": round(
+                    1013.0
+                    + 3.0 * math.sin(t / 300.0)
+                    + random.uniform(-0.2, 0.2),
+                    2,
+                ),
+                "iaq": self._calculate_iaq(int(self._gas), humidity),
+            }
 
 
 _sensor = None

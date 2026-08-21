@@ -1,11 +1,25 @@
 # CameraWebServerBLE — ESP32-CAM BLE Node
 
+This sketch is used by the following apps:
+
+**Sensor Playground**
+
+[![Get it on Google Play](https://img.shields.io/badge/Google_Play-Download-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=app.flutterdev.sensortester)
+[![Get it on the App Store](https://img.shields.io/badge/App_Store-Download-0D96F6?style=flat&logo=app-store&logoColor=white)](https://apps.apple.com/us/app/sensor-playground/id6778514035)
+
+**ESP32-Cam** 
+
+[![Get it on Google Play](https://img.shields.io/badge/Google_Play-Download-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=at.flutterdev.esp32_cam)
+[![Get it on the App Store](https://img.shields.io/badge/App_Store-Download-0D96F6?style=flat&logo=app-store&logoColor=white)](https://apps.apple.com/us/app/sensor-playground/id6754187049)
+
+
+
 > **Experimental.** BLE support for the ESP32-CAM is still experimental.
 
 BLE-only variant of the [`CameraWebServer`](../CameraWebServer/) (plain
 HTTP) and [`CameraWebServerWS`](../CameraWebServerWS/) (WebSocket)
 sketches. Camera status, camera controls and the JPEG video all travel
-over one GATT connection using the shared Sensor Tester service
+over one GATT connection using the shared Sensor Playground service
 contract: the client writes the API key to the auth characteristic
 before the node responds to anything. Setting `API_KEY` to the empty
 string (`""`) in `secrets.h` disables the check — the camera starts
@@ -105,7 +119,7 @@ button can be used again.
 
 On the first run the script creates `secrets.h` from
 `secrets.h.example`; fill in your API key (min. 8 characters, must match
-the key configured in the Sensor Tester / ESP32-CAM app — or empty to
+the key configured in the Sensor Playground / ESP32-CAM app — or empty to
 disable the key check), then re-run. No Wi-Fi credentials are needed.
 
 The script uses the AI-Thinker board definition

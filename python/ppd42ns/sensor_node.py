@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — Grove Dust Sensor / Shinyei PPD42NS (Python)
+Sensor Playground Sensor Node — Grove Dust Sensor / Shinyei PPD42NS (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers with a
+Implements the Sensor Playground Sensor Interface on single-board computers with a
 Grove Dust Sensor (Shinyei PPD42NS). The sensor pulls its output pin LOW while
 particles scatter light inside its chamber; the node accumulates that low-pulse
 occupancy (LPO) over 30-second windows and converts the ratio into a particle

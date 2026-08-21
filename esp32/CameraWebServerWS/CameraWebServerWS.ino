@@ -1,5 +1,5 @@
 /*
- * Sensor Tester ESP32-CAM Node — WebSocket variant
+ * Sensor Playground ESP32-CAM Node — WebSocket variant
  *
  * WebSocket-only counterpart of the plain-HTTP CameraWebServer sketch:
  * camera status, camera controls and the JPEG video all travel over a

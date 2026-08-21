@@ -1,0 +1,17 @@
+{
+  "name": "sensor-playground-speaker",
+  "version": "1.0.0",
+  "description": "Sensor Playground speaker node (Node.js) - WebSocket + UDP discovery, emulation only",
+  "main": "sensor_node.js",
+  "scripts": {
+    "start": "node sensor_node.js",
+    "test": "node test_driver.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

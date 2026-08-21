@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — BMP085 barometer (Python)
+Sensor Playground Sensor Node — BMP085 barometer (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a BMP085 I2C barometer — the sensor behind the
 Grove Barometer Sensor, and the ancestor of the BME280 (no humidity, no gas).
 https://wiki.seeedstudio.com/Grove-Barometer_Sensor/

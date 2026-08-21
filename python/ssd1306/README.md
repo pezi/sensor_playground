@@ -1,6 +1,6 @@
-# SSD1306 Display Node for Sensor Tester (Python)
+# SSD1306 Display Node for Sensor Playground (Python)
 
-This Python script implements the Sensor Tester sensor interface on
+This Python script implements the Sensor Playground sensor interface on
 single-board computers with an SSD1306 128×64 I2C OLED display.
 It is a *display* node: instead of producing readings it **consumes**
 data — the app pushes one command per action and the node draws it on
@@ -127,11 +127,11 @@ replace the `[Unit]` dependencies with `After=bluetooth.target` /
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-ssd1306.service`:
+Create `/etc/systemd/system/sensor-playground-ssd1306.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester SSD1306 Node
+Description=Sensor Playground SSD1306 Node
 After=network-online.target
 Wants=network-online.target
 
@@ -151,6 +151,6 @@ Then enable and start:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-ssd1306
-sudo systemctl start sensor-tester-ssd1306
+sudo systemctl enable sensor-playground-ssd1306
+sudo systemctl start sensor-playground-ssd1306
 ```

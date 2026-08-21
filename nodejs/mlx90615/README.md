@@ -1,0 +1,102 @@
+# MLX90615 Infrared Thermometer Node for Sensor Playground (Node.js)
+
+This Node.js program implements the Sensor Playground sensor interface on
+single-board computers (Raspberry Pi & co.) with a Grove Digital Infrared
+Temperature Sensor (**MLX90615**). It measures the **object temperature**
+of whatever is in the sensor's field of view — without contact — plus the
+**ambient temperature** of the sensor itself. The Sensor Playground app
+discovers this node via UDP broadcast (port 9133) and polls it for data
+over HTTPS (port 9132, `X-Api-Key` header).
+
+It is the Node.js counterpart of [`../../python/mlx90615/`](../../python/mlx90615/)
+and speaks the identical wire protocol.
+
+- BLE is **not** supported in this port; `"transport": "ble"` falls back
+  to Wi-Fi with a warning (use the Python or Rust node for BLE).
+
+The driver is a straight port of the register access in the Python node
+(smbus2): word reads from RAM register `0x26` (ambient) and `0x27`
+(object), temperature = raw × 0.02 K − 273.15, bit 15 set marks an error —
+readings match the Python node.
+
+> **Repeated start.** The MLX90615 is a strict SMBus part: the register
+> address and the data read must be one transfer with a repeated start. A
+> plain write-then-read would put a stop condition in between and the
+> sensor would abort, so this node uses `i2c-bus`'s `readWord()`, which
+> goes through the kernel's SMBus ioctl — the same call `smbus2`'s
+> `read_word_data()` makes in the Python node.
+
+## Readings
+
+| JSON key (REST) | Meaning |
+|-----------------|---------|
+| `temperature` | the sensor's own ambient temperature, °C |
+| `objectTemperature` | non-contact temperature of the object in view, °C |
+
+The UDP discovery reply carries the same two values as `temp`/`objtemp`.
+
+## Wiring (I2C, address 0x5B)
+
+| Pi Pin | Sensor Pin |
+|--------|------------|
+| 3.3V (Pin 1) | VCC |
+| GND (Pin 6) | GND |
+| GPIO 2 (Pin 3) | SDA |
+| GPIO 3 (Pin 5) | SCL |
+
+Enable I2C: `sudo raspi-config` → Interface Options → I2C. Other boards:
+set `i2c_bus` (Raspberry Pi `1`, NanoPi `0`, Banana Pi `2`).
+
+## Setup
+
+Install Node.js ≥ 18 (see [`../bme680/README.md`](../bme680/README.md)),
+then set up the node. The shared [`../common/`](../common) folder must be
+deployed next to this node folder (like the Python nodes):
+
+```bash
+npm install
+cp config.example.json config.json    # edit: api_key, i2c_bus
+```
+
+## Emulation
+
+Set `"emulation": true` in `config.json` to run the node without any
+hardware — it then serves plausible generated readings. Works on any
+machine (macOS/Windows included).
+
+## SSL Certificates
+
+```bash
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+  -keyout key.pem -out cert.pem -subj "/CN=SensorPlayground"
+```
+
+`cert.pem`/`key.pem` are resolved relative to the working directory and
+excluded from Git.
+
+## Usage
+
+```bash
+node sensor_node.js
+```
+
+> Only one Sensor Playground node can run per board at a time — all
+> nodes share ports 9132/9133.
+
+## Testing
+
+```bash
+curl -k -H "X-Api-Key: your-sensor-api-key" https://localhost:9132/
+```
+
+```json
+{"sensor":"MLX90615","host":"raspberrypi","temperature":22.4,"objectTemperature":28.9}
+```
+
+`npm test` checks the raw-word → °C conversion, including the error flag in
+bit 15.
+
+## Running as a Service
+
+Use the systemd template from [`../bme680/README.md`](../bme680/README.md)
+with the unit name `sensor-playground-mlx90615-node.service`.

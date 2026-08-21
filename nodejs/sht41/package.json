@@ -1,0 +1,17 @@
+{
+  "name": "sensor-playground-sht41",
+  "version": "1.0.0",
+  "description": "Sensor Playground sht41 sensor node (Node.js) - HTTPS REST + UDP discovery",
+  "main": "sensor_node.js",
+  "scripts": {
+    "start": "node sensor_node.js",
+    "test": "node test_driver.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "optionalDependencies": {
+    "i2c-bus": "^5.2.3"
+  }
+}

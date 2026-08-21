@@ -1,10 +1,10 @@
-# Grove Dust Sensor (PPD42NS) Node for Sensor Tester (Python)
+# Grove Dust Sensor (PPD42NS) Node for Sensor Playground (Python)
 
 This Python script reads a **Grove Dust Sensor** (Shinyei PPD42NS) and serves
-a particle concentration to the Sensor Tester app. Over Wi-Fi the Sensor
-Tester app discovers this node via UDP broadcast (port 9133) and polls it for
+a particle concentration to the Sensor Playground app. Over Wi-Fi the Sensor
+Playground app discovers this node via UDP broadcast (port 9133) and polls it for
 data over HTTPS (port 9132, `X-Api-Key` header); over BLE the node advertises
-the Sensor Tester GATT service instead.
+the Sensor Playground GATT service instead.
 https://wiki.seeedstudio.com/Grove-Dust_Sensor/
 
 > **Pollable, not push.** The dust value is continuous, so the node uses the
@@ -97,7 +97,7 @@ Generate a self-signed certificate for HTTPS:
 
 ```bash
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-  -keyout key.pem -out cert.pem -subj "/CN=SensorTester"
+  -keyout key.pem -out cert.pem -subj "/CN=SensorPlayground"
 ```
 
 The generated `cert.pem` and `key.pem` are referenced in `config.json`
@@ -127,13 +127,13 @@ LPO window has not completed yet.
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-ppd42ns.service` (mirror the other
+Create `/etc/systemd/system/sensor-playground-ppd42ns.service` (mirror the other
 nodes' unit files), then:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-ppd42ns
-sudo systemctl start sensor-tester-ppd42ns
+sudo systemctl enable sensor-playground-ppd42ns
+sudo systemctl start sensor-playground-ppd42ns
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

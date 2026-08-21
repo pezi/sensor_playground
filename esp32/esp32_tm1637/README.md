@@ -1,6 +1,6 @@
-# ESP32 TM1637 Clock Node for Sensor Tester
+# ESP32 TM1637 Clock Node for Sensor Playground
 
-An **actuator** node: the Sensor Tester app shows a digital clock and syncs
+An **actuator** node: the Sensor Playground app shows a digital clock and syncs
 `hh:mm` to a Grove 4-Digit Display (TM1637), and the node reports the state it
 is actually displaying back. Once a time is set the node keeps the clock
 running on its own — it advances the minute and blinks the colon locally, so

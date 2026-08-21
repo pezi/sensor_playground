@@ -1,7 +1,7 @@
-# ESP32 TSL2591 Node for Sensor Tester
+# ESP32 TSL2591 Node for Sensor Playground
 
 Reads a [TSL2591 light sensor](https://learn.adafruit.com/adafruit-tsl2591) and
-reports **visible light, infrared and illuminance** to the Sensor Tester app.
+reports **visible light, infrared and illuminance** to the Sensor Playground app.
 
 It covers roughly **188 µlx to 88 klx** — moonlight to direct sun — which is
 about 600 000 000 : 1. No single gain setting spans that, so the sketch shifts

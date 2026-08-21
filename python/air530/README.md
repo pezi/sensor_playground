@@ -1,11 +1,11 @@
-# Air530 GPS Sensor Node for Sensor Tester (Python)
+# Air530 GPS Sensor Node for Sensor Playground (Python)
 
-This Python script implements the Sensor Tester sensor interface on
+This Python script implements the Sensor Playground sensor interface on
 single-board computers with a Grove GPS (Air530) module (latitude,
-longitude, altitude, satellites in use). Over Wi-Fi the Sensor Tester app
+longitude, altitude, satellites in use). Over Wi-Fi the Sensor Playground app
 discovers this node via UDP broadcast (port 9133) and polls it for data
 over HTTPS (port 9132, `X-Api-Key` header); over BLE the node advertises
-the Sensor Tester GATT service instead.
+the Sensor Playground GATT service instead.
 
 Like the CozIR, the Air530 is **not an I2C device**: it continuously
 streams standard NMEA-0183 sentences over a **9600-baud UART** (serial).
@@ -92,7 +92,7 @@ Generate a self-signed certificate for HTTPS:
 
 ```bash
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-  -keyout key.pem -out cert.pem -subj "/CN=SensorTester"
+  -keyout key.pem -out cert.pem -subj "/CN=SensorPlayground"
 ```
 
 The generated `cert.pem` and `key.pem` are referenced in `config.json`
@@ -119,11 +119,11 @@ Returns e.g.:
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-air530.service`:
+Create `/etc/systemd/system/sensor-playground-air530.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester Air530 Node
+Description=Sensor Playground Air530 Node
 After=network-online.target
 Wants=network-online.target
 
@@ -143,8 +143,8 @@ Then enable and start:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-air530
-sudo systemctl start sensor-tester-air530
+sudo systemctl enable sensor-playground-air530
+sudo systemctl start sensor-playground-air530
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

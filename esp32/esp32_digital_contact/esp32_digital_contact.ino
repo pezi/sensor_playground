@@ -1,5 +1,5 @@
 /*
- * Sensor Tester Sensor Node — ESP32 Digital Contact Sensor (push)
+ * Sensor Playground Sensor Node — ESP32 Digital Contact Sensor (push)
  *
  * One generic *push* node for the simple digital Grove/BakeBit sensors that
  * only have two states (active / inactive) and react to an event:
@@ -18,7 +18,7 @@
  *     {"active": false}   sensor released
  *
  * The original dart_periphery examples toggle a local LED; this node ignores
- * that and instead reports the state to the Sensor Tester app.
+ * that and instead reports the state to the Sensor Playground app.
  *
  * Configure the three defines below for your sensor (see the table). The app
  * recognises the SENSOR_NAME and opens the generic trigger screen.
@@ -86,7 +86,7 @@ const int INPUT_PIN = 4;
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -294,7 +294,7 @@ void transportPublish(bool active) {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester Sensor Node ---");
+  Serial.println("\n--- Sensor Playground Sensor Node ---");
 
   // Give the idle state a defined level via an internal pull resistor:
   //  - active-low sensors idle HIGH  -> pull-up

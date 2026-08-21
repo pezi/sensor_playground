@@ -1,0 +1,19 @@
+{
+  "name": "sensor-playground-digital_contact",
+  "version": "1.0.0",
+  "description": "Sensor Playground digital contact node (Node.js) - WebSocket + UDP discovery",
+  "main": "sensor_node.js",
+  "scripts": {
+    "start": "node sensor_node.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "optionalDependencies": {
+    "node-libgpiod": "^0.4.1"
+  }
+}

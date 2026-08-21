@@ -1,0 +1,42 @@
+[workspace]
+resolver = "2"
+members = [
+    "common", "aht20", "air530", "at24c128", "bme280",
+    "bme680", "bmp085", "chirp", "cozir", "dht11", "dht22",
+    "digital_contact", "imu10dof", "isl29125", "led", "light",
+    "mcp9808", "mlx90615", "mma7660", "moisture", "mpu6050",
+    "nfctag", "paj7620", "ppd42ns", "relay", "rfid", "rotary_angle",
+    "scd30", "sgp30", "si1145", "sht11", "sht31",
+    "sht41", "speaker", "ssd1306", "tcs34725", "tm1637",
+    "tsl2591", "ultrasonic", "vl53l0x",
+]
+
+[workspace.package]
+version = "1.0.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# rustls with the ring backend: the default aws-lc-rs backend needs cmake
+# on the Raspberry Pi, ring builds with just a C compiler.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "logging", "tls12"] }
+rustls-pemfile = "2"
+socket2 = "0.5"
+sha2 = "0.10"
+hostname = "0.4"
+fastrand = "2"
+tungstenite = "0.24"
+bluer = { version = "0.17", features = ["bluetoothd"] }
+tokio = { version = "1", features = ["rt-multi-thread", "time", "signal", "macros"] }
+uuid = "1"
+libc = "0.2"
+futures = "0.3"
+# Feature-unifies into bluer's dbus dependency: build libdbus from source
+# so the binary cross-compiles without a target libdbus sysroot.
+dbus = { version = "0.9", features = ["vendored"] }
+gpiocdev = "0.7"
+
+[profile.release]
+strip = true

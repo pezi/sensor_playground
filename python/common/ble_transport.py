@@ -1,8 +1,8 @@
 """
-Sensor Tester BLE Transport (Python)
+Sensor Playground BLE Transport (Python)
 
 Shared BLE peripheral (GATT server) for the Python sensor nodes, mirroring
-the ESP32 sketches' BLE contract so the Sensor Tester app needs no changes:
+the ESP32 sketches' BLE contract so the Sensor Playground app needs no changes:
 
 - Service  d1a51b00-0001-...  advertised under the sensor name
 - Data     d1a51b00-0002-...  READ | NOTIFY, JSON payload (same as REST/WS)
@@ -61,7 +61,7 @@ _METADATA_KEYS = frozenset({"sensor", "host"})
 
 
 class BleTransport:
-    """BLE peripheral publishing sensor JSON per the Sensor Tester contract."""
+    """BLE peripheral publishing sensor JSON per the Sensor Playground contract."""
 
     def __init__(self, name, api_key, on_command=None):
         self.name = name

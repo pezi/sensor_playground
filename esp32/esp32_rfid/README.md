@@ -1,4 +1,4 @@
-# ESP32 Grove 125KHz RFID Reader Node — Sensor Tester
+# ESP32 Grove 125KHz RFID Reader Node — Sensor Playground
 
 ESP32 sketch for the [Grove 125KHz RFID
 Reader](https://wiki.seeedstudio.com/Grove-125KHz_RFID_Reader/), an
@@ -17,7 +17,7 @@ Selected at compile time via `ACTIVE_TRANSPORT` in the sketch (or the
 | Transport | Wire protocol |
 |-----------|---------------|
 | `TRANSPORT_WIFI` | WebSocket server on port 9132 (`ws://`, `X-Api-Key` handshake header) + UDP discovery on port 9133 |
-| `TRANSPORT_BLE` (default) | Sensor Tester GATT service; each scan is one notify on the data characteristic |
+| `TRANSPORT_BLE` (default) | Sensor Playground GATT service; each scan is one notify on the data characteristic |
 
 ## Protocol (Wi-Fi)
 
@@ -79,7 +79,7 @@ nothing to probe at boot — a wiring error shows only as silence.
 
 On the first run `install.sh` creates `secrets.h` from
 `secrets.h.example`; fill in the Wi-Fi credentials, the API key (min. 8
-characters, must match the key configured in the Sensor Tester app) and
+characters, must match the key configured in the Sensor Playground app) and
 the hostname, then re-run.
 
 ## Testing

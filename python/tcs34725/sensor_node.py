@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — TCS34725 (Python)
+Sensor Playground Sensor Node — TCS34725 (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a TCS34725 I2C sensor (RGB color, color temperature, illuminance).
 
 - HTTPS REST API on port 9132 + UDP discovery on port 9133 (default), or

@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — TSL2591 (Python)
+Sensor Playground Sensor Node — TSL2591 (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a TSL2591 I2C sensor (visible light, infrared,
 illuminance).
 

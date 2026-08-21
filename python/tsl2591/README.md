@@ -1,10 +1,10 @@
-# TSL2591 Sensor Node for Sensor Tester (Python)
+# TSL2591 Sensor Node for Sensor Playground (Python)
 
-This Python script implements the Sensor Tester sensor interface on
+This Python script implements the Sensor Playground sensor interface on
 single-board computers with a TSL2591 I2C light sensor. It reports **visible
-light, infrared and illuminance**. Over Wi-Fi the Sensor Tester app discovers
+light, infrared and illuminance**. Over Wi-Fi the Sensor Playground app discovers
 this node via UDP broadcast (port 9133) and polls it for data over HTTPS
-(port 9132, `X-Api-Key` header); over BLE the node advertises the Sensor Tester
+(port 9132, `X-Api-Key` header); over BLE the node advertises the Sensor Playground
 GATT service instead.
 
 It is the Python/SoC counterpart of the ESP32 sketch in
@@ -197,11 +197,11 @@ moves.
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-tsl2591.service`:
+Create `/etc/systemd/system/sensor-playground-tsl2591.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester TSL2591 Node
+Description=Sensor Playground TSL2591 Node
 After=network-online.target
 Wants=network-online.target
 
@@ -219,8 +219,8 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-tsl2591
-sudo systemctl start sensor-tester-tsl2591
+sudo systemctl enable sensor-playground-tsl2591
+sudo systemctl start sensor-playground-tsl2591
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

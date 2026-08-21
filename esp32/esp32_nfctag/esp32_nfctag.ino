@@ -1,7 +1,7 @@
 /*
- * Sensor Tester Sensor Node — ESP32 + Grove NFC Tag (M24LR64E-R)
+ * Sensor Playground Sensor Node — ESP32 + Grove NFC Tag (M24LR64E-R)
  *
- * Implements a *push* variant of the Sensor Tester Sensor Interface. The
+ * Implements a *push* variant of the Sensor Playground Sensor Interface. The
  * Grove NFC Tag is a passive dual-interface EEPROM: a phone or NFC writer
  * stores an NDEF message over the ISO 15693 RF interface, and this node
  * reads the same memory over I2C (user memory at address 0x53). It polls
@@ -55,7 +55,7 @@
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -450,7 +450,7 @@ void pollTag() {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester Sensor Node ---");
+  Serial.println("\n--- Sensor Playground Sensor Node ---");
 
   Wire.begin();
   Wire.beginTransmission(TAG_I2C_ADDRESS);

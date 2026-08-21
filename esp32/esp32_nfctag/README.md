@@ -1,4 +1,4 @@
-# ESP32 Grove NFC Tag Node — Sensor Tester
+# ESP32 Grove NFC Tag Node — Sensor Playground
 
 ESP32 sketch for the [Grove NFC
 Tag](https://wiki.seeedstudio.com/Grove_NFC_Tag/) — a **passive
@@ -18,7 +18,7 @@ Selected at compile time via `ACTIVE_TRANSPORT` in the sketch (or the
 | Transport | Wire protocol |
 |-----------|---------------|
 | `TRANSPORT_WIFI` | WebSocket server on port 9132 (`ws://`, `X-Api-Key` handshake header) + UDP discovery on port 9133 |
-| `TRANSPORT_BLE` (default) | Sensor Tester GATT service; each change is one notify on the data characteristic, and a read serves the current content |
+| `TRANSPORT_BLE` (default) | Sensor Playground GATT service; each change is one notify on the data characteristic, and a read serves the current content |
 
 ## Protocol (Wi-Fi)
 
@@ -81,7 +81,7 @@ capped at 64 bytes. A blank or NDEF-less tag reports `empty`.
 
 On the first run `install.sh` creates `secrets.h` from
 `secrets.h.example`; fill in the Wi-Fi credentials, the API key (min. 8
-characters, must match the key configured in the Sensor Tester app) and
+characters, must match the key configured in the Sensor Playground app) and
 the hostname, then re-run.
 
 ## Testing

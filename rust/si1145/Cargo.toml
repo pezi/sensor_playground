@@ -1,0 +1,15 @@
+[package]
+name = "sensor-playground-si1145"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "sensor_node_si1145"
+path = "src/main.rs"
+
+[dependencies]
+common = { package = "sensor-playground-common", path = "../common" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+fastrand = { workspace = true }

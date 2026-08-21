@@ -1,10 +1,10 @@
-# SHT41 Sensor Node for Sensor Tester (Python)
+# SHT41 Sensor Node for Sensor Playground (Python)
 
-This Python script implements the Sensor Tester sensor interface on
+This Python script implements the Sensor Playground sensor interface on
 single-board computers with a SHT41 I2C sensor (temperature, humidity).
-Over Wi-Fi the Sensor Tester app discovers this node via UDP broadcast
+Over Wi-Fi the Sensor Playground app discovers this node via UDP broadcast
 (port 9133) and polls it for data over HTTPS (port 9132, `X-Api-Key`
-header); over BLE the node advertises the Sensor Tester GATT service
+header); over BLE the node advertises the Sensor Playground GATT service
 instead.
 
 It is the Python/SoC counterpart of the ESP32 sketch in
@@ -75,7 +75,7 @@ Generate a self-signed certificate for HTTPS:
 
 ```bash
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-  -keyout key.pem -out cert.pem -subj "/CN=SensorTester"
+  -keyout key.pem -out cert.pem -subj "/CN=SensorPlayground"
 ```
 
 The generated `cert.pem` and `key.pem` are referenced in `config.json`
@@ -96,11 +96,11 @@ curl -k -H "X-Api-Key: your-sensor-api-key" https://localhost:9132/
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-sht41.service`:
+Create `/etc/systemd/system/sensor-playground-sht41.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester SHT41 Node
+Description=Sensor Playground SHT41 Node
 After=network-online.target
 Wants=network-online.target
 
@@ -120,8 +120,8 @@ Then enable and start:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-sht41
-sudo systemctl start sensor-tester-sht41
+sudo systemctl enable sensor-playground-sht41
+sudo systemctl start sensor-playground-sht41
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

@@ -1,7 +1,7 @@
 /*
- * Sensor Tester Sensor Node — ESP32 + BME680
+ * Sensor Playground Sensor Node — ESP32 + BME680
  *
- * Implements the Sensor Tester Sensor Interface (see docs/sensor.md).
+ * Implements the Sensor Playground Sensor Interface (see docs/sensor.md).
  * Reads a BME680 (temperature, humidity, pressure, IAQ) via I2C.
  *
  * Transport is chosen at compile time via ACTIVE_TRANSPORT:
@@ -31,6 +31,7 @@
 #include <Wire.h>
 #include <ArduinoJson.h>
 #include <Adafruit_BME680.h>
+#include "bme680_logic.h"
 #include "secrets.h"
 
 #if ACTIVE_TRANSPORT == TRANSPORT_WIFI
@@ -52,7 +53,7 @@
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -61,33 +62,29 @@
 // --- Sensor ---
 Adafruit_BME680 bme;
 const char* SENSOR_NAME = "BME680";
+const uint8_t BME680_I2C_ADDRESSES[] = {0x76, 0x77};
+// FIELD0 starts at 0x1d; byte 14 carries gas-valid and heater-stable.
+const uint8_t BME680_GAS_STATUS_REGISTER = 0x2B;
+uint8_t bme680I2cAddress = 0;
 
 // --- IAQ Calculation (ported from dart_periphery BME680 driver) ---
-const int GAS_BURN_IN       = 50;
-const float HUM_BASELINE    = 40.0;
-const float HUM_WEIGHT      = 0.25;
-
-int gasData[GAS_BURN_IN];
-int gasDataIndex = 0;
-int lastIaq      = 0;
+Bme680Iaq airQuality;
 
 String buildSensorJson(bool shortKeys);
+bool beginBme680();
+bool readBme680GasStatus(uint8_t& status);
 
-#if ACTIVE_TRANSPORT == TRANSPORT_WIFI
 SemaphoreHandle_t sensorReadMutex = nullptr;
+#if ACTIVE_TRANSPORT == TRANSPORT_WIFI
 TaskHandle_t tlsServerTaskHandle = nullptr;
 #endif
 
 void lockSensorStateForTransport() {
-#if ACTIVE_TRANSPORT == TRANSPORT_WIFI
   xSemaphoreTake(sensorReadMutex, portMAX_DELAY);
-#endif
 }
 
 void unlockSensorStateForTransport() {
-#if ACTIVE_TRANSPORT == TRANSPORT_WIFI
   xSemaphoreGive(sensorReadMutex);
-#endif
 }
 
 String buildSensorJsonForTransport(bool shortKeys) {
@@ -96,7 +93,6 @@ String buildSensorJsonForTransport(bool shortKeys) {
   unlockSensorStateForTransport();
   return json;
 }
-int calculateIaq(int gasResistance, float humidity);
 
 #if ACTIVE_TRANSPORT == TRANSPORT_WIFI
 // ============================================================
@@ -134,14 +130,6 @@ void transportSetup() {
   if (!configureSensorTls(&sslConf, &srvcert, &pkey, &entropy, &ctr_drbg,
                           SERVER_CERT, SERVER_KEY)) {
     Serial.println("TLS initialization failed; restarting");
-    delay(1000);
-    ESP.restart();
-    return;
-  }
-
-  sensorReadMutex = xSemaphoreCreateMutex();
-  if (sensorReadMutex == nullptr) {
-    Serial.println("Sensor mutex allocation failed; restarting");
     delay(1000);
     ESP.restart();
     return;
@@ -285,12 +273,27 @@ BLECharacteristic* dataChar = nullptr;
 bool deviceConnected = false;
 bool authed = false;
 unsigned long lastNotifyMs = 0;
+SemaphoreHandle_t bleStateMutex = nullptr;
+String latestSensorJson = "{}";
+
+bool bleClientReady() {
+  xSemaphoreTake(bleStateMutex, portMAX_DELAY);
+  const bool ready = deviceConnected && authed;
+  xSemaphoreGive(bleStateMutex);
+  return ready;
+}
 
 class ServerCallbacks : public BLEServerCallbacks {
-  void onConnect(BLEServer* server) override { deviceConnected = true; }
+  void onConnect(BLEServer* server) override {
+    xSemaphoreTake(bleStateMutex, portMAX_DELAY);
+    deviceConnected = true;
+    xSemaphoreGive(bleStateMutex);
+  }
   void onDisconnect(BLEServer* server) override {
+    xSemaphoreTake(bleStateMutex, portMAX_DELAY);
     deviceConnected = false;
     authed = false;
+    xSemaphoreGive(bleStateMutex);
     server->getAdvertising()->start();  // allow the next client to find us
   }
 };
@@ -302,19 +305,32 @@ class AuthCallbacks : public BLECharacteristicCallbacks {
     while (val.length() > 0 && (val[val.length() - 1] == '\0' || val[val.length() - 1] == '\r' || val[val.length() - 1] == '\n')) {
       val.remove(val.length() - 1);
     }
+    xSemaphoreTake(bleStateMutex, portMAX_DELAY);
     authed = (val == API_KEY);
-    Serial.println(authed ? "Client authorized" : "Bad API key");
+    const bool accepted = authed;
+    xSemaphoreGive(bleStateMutex);
+    Serial.println(accepted ? "Client authorized" : "Bad API key");
   }
 };
 
 // Serve the latest reading only to an authorized client.
 class DataCallbacks : public BLECharacteristicCallbacks {
   void onRead(BLECharacteristic* characteristic) override {
-    characteristic->setValue(authed ? buildSensorJsonForTransport(false).c_str() : "{}");
+    xSemaphoreTake(bleStateMutex, portMAX_DELAY);
+    characteristic->setValue(authed ? latestSensorJson.c_str() : "{}");
+    xSemaphoreGive(bleStateMutex);
   }
 };
 
 void transportSetup() {
+  bleStateMutex = xSemaphoreCreateMutex();
+  if (bleStateMutex == nullptr) {
+    Serial.println("BLE state mutex allocation failed; restarting");
+    delay(1000);
+    ESP.restart();
+    return;
+  }
+
   BLEDevice::init(SENSOR_NAME);
   BLEServer* server = BLEDevice::createServer();
   server->setCallbacks(new ServerCallbacks());
@@ -343,11 +359,14 @@ void transportSetup() {
 void transportLoop() {
   // Push a fresh reading once per second to subscribed, authorized clients.
   // (A BME680 reading with the gas heater takes ~200 ms.)
-  if (deviceConnected && authed && millis() - lastNotifyMs >= 1000) {
+  if (bleClientReady() && millis() - lastNotifyMs >= 1000) {
     lastNotifyMs = millis();
     String json = buildSensorJsonForTransport(false);
     if (json.indexOf("temperature") >= 0) {
-      notifySensorJson(dataChar, json);
+      xSemaphoreTake(bleStateMutex, portMAX_DELAY);
+      latestSensorJson = json;
+      if (deviceConnected && authed) notifySensorJson(dataChar, json);
+      xSemaphoreGive(bleStateMutex);
     }
   }
   delay(10);
@@ -357,19 +376,30 @@ void transportLoop() {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester Sensor Node ---");
+  Serial.println("\n--- Sensor Playground Sensor Node ---");
 
   Wire.begin();
-  if (!bme.begin(0x76)) {
+  if (!beginBme680()) {
     Serial.println("Error: BME680 not found!");
     while (1) delay(1000);
   }
-  bme.setTemperatureOversampling(BME680_OS_8X);
-  bme.setHumidityOversampling(BME680_OS_2X);
-  bme.setPressureOversampling(BME680_OS_4X);
-  bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
-  bme.setGasHeater(320, 150);
-  memset(gasData, 0, sizeof(gasData));
+  if (!bme.setTemperatureOversampling(BME680_OS_8X) ||
+      !bme.setHumidityOversampling(BME680_OS_2X) ||
+      !bme.setPressureOversampling(BME680_OS_4X) ||
+      !bme.setIIRFilterSize(BME680_FILTER_SIZE_3) ||
+      !bme.setGasHeater(320, 150)) {
+    Serial.println("Error: BME680 configuration failed!");
+    while (1) delay(1000);
+  }
+  Serial.printf("BME680 found at I2C address 0x%02X\n", bme680I2cAddress);
+
+  sensorReadMutex = xSemaphoreCreateMutex();
+  if (sensorReadMutex == nullptr) {
+    Serial.println("Sensor mutex allocation failed; restarting");
+    delay(1000);
+    ESP.restart();
+    return;
+  }
 
   transportSetup();
 
@@ -401,16 +431,20 @@ String buildSensorJson(bool shortKeys) {
   }
 
   if (bme.performReading()) {
+    uint8_t gasStatus = 0;
+    if (!readBme680GasStatus(gasStatus)) gasStatus = 0;
+    const int iaq = airQuality.updateIfValid(
+        gasStatus, static_cast<int32_t>(bme.gas_resistance), bme.humidity);
     if (shortKeys) {
       doc["temp"]  = bme.temperature;
       doc["hum"]   = bme.humidity;
       doc["press"] = bme.pressure / 100.0;
-      doc["iaq"]   = calculateIaq((int)bme.gas_resistance, bme.humidity);
+      doc["iaq"]   = iaq;
     } else {
       doc["temperature"] = bme.temperature;
       doc["humidity"]    = bme.humidity;
       doc["pressure"]    = bme.pressure / 100.0;
-      doc["iaq"]         = calculateIaq((int)bme.gas_resistance, bme.humidity);
+      doc["iaq"]         = iaq;
     }
   }
 
@@ -420,39 +454,31 @@ String buildSensorJson(bool shortKeys) {
 }
 
 // ============================================================
-// IAQ — rolling-baseline algorithm (ported from dart_periphery)
+// Probe both BME680 I2C addresses used by common breakout boards.
 // ============================================================
-int calculateIaq(int gasResistance, float humidity) {
-  gasData[gasDataIndex] = gasResistance;
-  gasDataIndex = (gasDataIndex + 1) % GAS_BURN_IN;
-
-  long sum = 0;
-  for (int i = 0; i < GAS_BURN_IN; i++) sum += gasData[i];
-  int gasBaseline = (int)round((double)sum / GAS_BURN_IN);
-  if (gasBaseline == 0) { lastIaq = 0; return lastIaq; }
-
-  int gasOffset   = gasBaseline - gasResistance;
-  float humOffset = humidity - HUM_BASELINE;
-
-  float humScore;
-  if (humOffset > 0) {
-    humScore = (100.0 - HUM_BASELINE - humOffset)
-               / (100.0 - HUM_BASELINE)
-               * (HUM_WEIGHT * 100.0);
-  } else {
-    humScore = (HUM_BASELINE + humOffset)
-               / HUM_BASELINE
-               * (HUM_WEIGHT * 100.0);
+bool beginBme680() {
+  for (size_t i = 0;
+       i < sizeof(BME680_I2C_ADDRESSES) / sizeof(BME680_I2C_ADDRESSES[0]);
+       i++) {
+    if (bme.begin(BME680_I2C_ADDRESSES[i])) {
+      bme680I2cAddress = BME680_I2C_ADDRESSES[i];
+      return true;
+    }
   }
+  return false;
+}
 
-  float gasWeight = 100.0 - (HUM_WEIGHT * 100.0);
-  float gasScore;
-  if (gasOffset > 0) {
-    gasScore = ((float)gasResistance / gasBaseline) * gasWeight;
-  } else {
-    gasScore = gasWeight;
+// ============================================================
+// Read both validity flags directly. Adafruit BME680 2.0.6 exposes no status
+// and accepts either flag, while Bosch requires gas-valid AND heater-stable.
+// ============================================================
+bool readBme680GasStatus(uint8_t& status) {
+  Wire.beginTransmission(bme680I2cAddress);
+  Wire.write(BME680_GAS_STATUS_REGISTER);
+  if (Wire.endTransmission(false) != 0) return false;
+  if (Wire.requestFrom(bme680I2cAddress, static_cast<uint8_t>(1)) != 1) {
+    return false;
   }
-
-  lastIaq = (int)round(humScore + gasScore);
-  return lastIaq;
+  status = Wire.read();
+  return true;
 }

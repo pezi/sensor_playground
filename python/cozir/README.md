@@ -1,10 +1,10 @@
-# CozIR Sensor Node for Sensor Tester (Python)
+# CozIR Sensor Node for Sensor Playground (Python)
 
-This Python script implements the Sensor Tester sensor interface on
+This Python script implements the Sensor Playground sensor interface on
 single-board computers with a CozIR-A CO₂ sensor (temperature, humidity,
-CO₂). Over Wi-Fi the Sensor Tester app discovers this node via UDP
+CO₂). Over Wi-Fi the Sensor Playground app discovers this node via UDP
 broadcast (port 9133) and polls it for data over HTTPS (port 9132,
-`X-Api-Key` header); over BLE the node advertises the Sensor Tester GATT
+`X-Api-Key` header); over BLE the node advertises the Sensor Playground GATT
 service instead.
 
 Unlike the other environment sensors the CozIR is **not an I2C device**:
@@ -89,7 +89,7 @@ Generate a self-signed certificate for HTTPS:
 
 ```bash
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-  -keyout key.pem -out cert.pem -subj "/CN=SensorTester"
+  -keyout key.pem -out cert.pem -subj "/CN=SensorPlayground"
 ```
 
 The generated `cert.pem` and `key.pem` are referenced in `config.json`
@@ -110,11 +110,11 @@ curl -k -H "X-Api-Key: your-sensor-api-key" https://localhost:9132/
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-cozir.service`:
+Create `/etc/systemd/system/sensor-playground-cozir.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester CozIR Node
+Description=Sensor Playground CozIR Node
 After=network-online.target
 Wants=network-online.target
 
@@ -134,8 +134,8 @@ Then enable and start:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-cozir
-sudo systemctl start sensor-tester-cozir
+sudo systemctl enable sensor-playground-cozir
+sudo systemctl start sensor-playground-cozir
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — Grove Light Sensor (Python)
+Sensor Playground Sensor Node — Grove Light Sensor (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers with a
+Implements the Sensor Playground Sensor Interface on single-board computers with a
 Grove Light Sensor — an analog photo-resistor. It reports a raw brightness
 value (higher = brighter) under the JSON key `light`.
 https://wiki.seeedstudio.com/Grove-Light_Sensor/

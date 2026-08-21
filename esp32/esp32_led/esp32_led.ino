@@ -1,7 +1,7 @@
 /*
- * Sensor Tester LED Node — ESP32 + LED (+ optional push button)
+ * Sensor Playground LED Node — ESP32 + LED (+ optional push button)
  *
- * Implements the *actuator* variant of the Sensor Tester Sensor Interface.
+ * Implements the *actuator* variant of the Sensor Playground Sensor Interface.
  * Like the TM1637 clock it talks in both directions: the app sends a
  * switch command and the node reports the resulting state back, because the
  * LED can also be toggled by a push button wired to the node itself. The
@@ -84,7 +84,7 @@ const bool BUTTON_ACTIVE_LOW = true;
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -383,7 +383,7 @@ void transportPublish(bool on) {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester LED Node ---");
+  Serial.println("\n--- Sensor Playground LED Node ---");
 
   pinMode(LED_PIN, OUTPUT);
   // Start dark, driving the pin explicitly so the reported state and the

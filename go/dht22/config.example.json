@@ -1,0 +1,11 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "gpio_pin": 4,
+  "gpio_chip": 0,
+  "sensor_name": "DHT22",
+  "transport": "wifi",
+  "emulation": false,
+  "ssl_cert": "cert.pem",
+  "ssl_key": "key.pem"
+}

@@ -1,8 +1,8 @@
-# ESP32 Rotary Angle Sensor Node for Sensor Tester
+# ESP32 Rotary Angle Sensor Node for Sensor Playground
 
 Reads a [Grove Rotary Angle Sensor](https://wiki.seeedstudio.com/Grove-Rotary_Angle_Sensor/)
 — a 10 kΩ potentiometer with 300° of mechanical travel — on an ADC pin and
-reports the knob position to the Sensor Tester app, which draws it as a needle
+reports the knob position to the Sensor Playground app, which draws it as a needle
 on a dial.
 
 Unlike the light sensor (also analog, but polled over HTTPS every few seconds)

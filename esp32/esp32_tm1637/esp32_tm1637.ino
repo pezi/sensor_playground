@@ -1,7 +1,7 @@
 /*
- * Sensor Tester Clock Node — ESP32 + Grove 4-Digit Display (TM1637)
+ * Sensor Playground Clock Node — ESP32 + Grove 4-Digit Display (TM1637)
  *
- * Implements the *actuator* variant of the Sensor Tester Sensor Interface.
+ * Implements the *actuator* variant of the Sensor Playground Sensor Interface.
  * Like the LED node it talks in both directions: the app pushes the time to
  * show (and a brightness), and the node reports the state it is actually
  * displaying — which keeps changing on its own, because once a time is set
@@ -80,7 +80,7 @@ const uint8_t DEFAULT_BRIGHTNESS = 3;
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -551,7 +551,7 @@ void transportPublish() {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester Clock Node ---");
+  Serial.println("\n--- Sensor Playground Clock Node ---");
 
   pinMode(TM_CLK_PIN, OUTPUT);
   pinMode(TM_DIO_PIN, OUTPUT);

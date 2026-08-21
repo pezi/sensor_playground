@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — MLX90615 (Python)
+Sensor Playground Sensor Node — MLX90615 (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a Grove Digital Infrared Temperature Sensor
 (MLX90615): the non-contact object temperature plus the sensor's own
 ambient temperature.

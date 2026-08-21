@@ -1,14 +1,14 @@
-# MPU6050 IMU Node for Sensor Tester (Python)
+# MPU6050 IMU Node for Sensor Playground (Python)
 
-This Python script implements the Sensor Tester sensor interface on
+This Python script implements the Sensor Playground sensor interface on
 single-board computers with an MPU6050 6-axis IMU (accelerometer +
 gyroscope). The accelerometer axes are converted into roll and pitch angles
 plus the total acceleration magnitude (g-force); the on-die temperature is
-reported as well. Over Wi-Fi the Sensor Tester app discovers this node via
+reported as well. Over Wi-Fi the Sensor Playground app discovers this node via
 UDP broadcast (port 9133) and then **streams** the readings from a WebSocket
 (port 9132, `ws://`, `X-Api-Key` header on the handshake) — the app streams
 accelerometers rather than polling them; over BLE the node advertises the
-Sensor Tester GATT service instead.
+Sensor Playground GATT service instead.
 
 It is the Python/SoC counterpart of the ESP32 sketch in
 `../../esp32/esp32_mpu6050/` and supports the same two transports (Wi-Fi
@@ -100,11 +100,11 @@ asyncio.run(main())
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-mpu6050.service`:
+Create `/etc/systemd/system/sensor-playground-mpu6050.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester MPU6050 Node
+Description=Sensor Playground MPU6050 Node
 After=network-online.target
 Wants=network-online.target
 
@@ -124,8 +124,8 @@ Then enable and start:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-mpu6050
-sudo systemctl start sensor-tester-mpu6050
+sudo systemctl enable sensor-playground-mpu6050
+sudo systemctl start sensor-playground-mpu6050
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make
@@ -134,7 +134,7 @@ sure the service user may register GATT applications (`bluetooth` group or
 
 ```ini
 [Unit]
-Description=Sensor Tester MPU6050 Node (BLE)
+Description=Sensor Playground MPU6050 Node (BLE)
 After=bluetooth.target
 Wants=bluetooth.target
 

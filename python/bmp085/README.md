@@ -1,12 +1,12 @@
-# BMP085 Sensor Node for Sensor Tester (Python)
+# BMP085 Sensor Node for Sensor Playground (Python)
 
-This Python script implements the Sensor Tester sensor interface on
+This Python script implements the Sensor Playground sensor interface on
 single-board computers with a BMP085 I2C barometer — the sensor behind the
 Grove Barometer Sensor, and the ancestor of the BME280 (no humidity, no gas
 sensor). It reports **temperature, barometric pressure and altitude**.
-Over Wi-Fi the Sensor Tester app discovers this node via UDP broadcast
+Over Wi-Fi the Sensor Playground app discovers this node via UDP broadcast
 (port 9133) and polls it for data over HTTPS (port 9132, `X-Api-Key`
-header); over BLE the node advertises the Sensor Tester GATT service
+header); over BLE the node advertises the Sensor Playground GATT service
 instead.
 
 It is the Python/SoC counterpart of the ESP32 sketch in
@@ -155,11 +155,11 @@ the pressure drops.
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-bmp085.service`:
+Create `/etc/systemd/system/sensor-playground-bmp085.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester BMP085 Node
+Description=Sensor Playground BMP085 Node
 After=network-online.target
 Wants=network-online.target
 
@@ -177,8 +177,8 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-bmp085
-sudo systemctl start sensor-tester-bmp085
+sudo systemctl enable sensor-playground-bmp085
+sudo systemctl start sensor-playground-bmp085
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

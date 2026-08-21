@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — SCD30 (Python)
+Sensor Playground Sensor Node — SCD30 (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a SCD30 I2C sensor (temperature, humidity, CO2).
 
 - HTTPS REST API on port 9132 + UDP discovery on port 9133 (default), or

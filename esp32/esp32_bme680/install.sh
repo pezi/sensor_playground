@@ -10,6 +10,11 @@ set -euo pipefail
 
 SKETCH_DIR="$(cd "$(dirname "$0")" && pwd)"
 FQBN="esp32:esp32:esp32"
+ESP32_CORE_VERSION="3.3.11"
+ARDUINO_JSON_VERSION="7.4.3"
+ADAFRUIT_BME680_VERSION="2.0.6"
+ADAFRUIT_BUSIO_VERSION="1.17.4"
+ADAFRUIT_UNIFIED_SENSOR_VERSION="1.1.15"
 
 if [ $# -lt 1 ] || [ $# -gt 2 ]; then
   echo "Usage: $0 <serial-port> [WIFI|BLE]" >&2
@@ -40,8 +45,12 @@ if [ ! -f "$SKETCH_DIR/secrets.h" ]; then
 fi
 
 arduino-cli core update-index
-arduino-cli core install esp32:esp32
-arduino-cli lib install "ArduinoJson" "Adafruit BME680 Library"
+arduino-cli core install "esp32:esp32@$ESP32_CORE_VERSION"
+arduino-cli lib install \
+  "ArduinoJson@$ARDUINO_JSON_VERSION" \
+  "Adafruit BusIO@$ADAFRUIT_BUSIO_VERSION" \
+  "Adafruit Unified Sensor@$ADAFRUIT_UNIFIED_SENSOR_VERSION" \
+  "Adafruit BME680 Library@$ADAFRUIT_BME680_VERSION"
 
 arduino-cli compile -b "$FQBN" \
   --build-property "compiler.cpp.extra_flags=-DACTIVE_TRANSPORT=TRANSPORT_$TRANSPORT" \

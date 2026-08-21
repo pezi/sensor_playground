@@ -1,0 +1,13 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "hat_type": "grove",
+  "pin": 0,
+  "i2c_bus": 1,
+  "adc_dry": 2600,
+  "adc_wet": 1100,
+  "transport": "wifi",
+  "emulation": false,
+  "ssl_cert": "cert.pem",
+  "ssl_key": "key.pem"
+}

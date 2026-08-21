@@ -31,7 +31,7 @@ fi
 echo "Generating self-signed certificate..."
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
   -keyout "$KEY_FILE" -out "$CERT_FILE" \
-  -subj "/CN=SensorTester" 2>/dev/null
+  -subj "/CN=SensorPlayground" 2>/dev/null
 
 python3 - "$SECRETS" "$CERT_FILE" "$KEY_FILE" << 'PYEOF'
 import re, sys

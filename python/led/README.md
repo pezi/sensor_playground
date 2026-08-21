@@ -1,13 +1,13 @@
-# LED Node for Sensor Tester (Python)
+# LED Node for Sensor Playground (Python)
 
-An **actuator** node: the Sensor Tester app switches an LED on and off, and the
+An **actuator** node: the Sensor Playground app switches an LED on and off, and the
 node reports the resulting state back. An optional push button wired to the
 same node toggles the same LED locally, so the app follows changes it did not
 cause.
 
 Over Wi-Fi both directions travel on one **WebSocket** (`ws://`, port 9132,
 `X-Api-Key` checked on the handshake), discovered via UDP broadcast on port
-9133. Over BLE the node advertises the Sensor Tester GATT service instead: the
+9133. Over BLE the node advertises the Sensor Playground GATT service instead: the
 state arrives as a notification and the command as a write.
 
 It is the Python/SoC counterpart of `../../esp32/esp32_led/` and supports the
@@ -158,11 +158,11 @@ prints a line too.
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-led.service`:
+Create `/etc/systemd/system/sensor-playground-led.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester LED Node
+Description=Sensor Playground LED Node
 After=network-online.target
 Wants=network-online.target
 
@@ -180,8 +180,8 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-led
-sudo systemctl start sensor-tester-led
+sudo systemctl enable sensor-playground-led
+sudo systemctl start sensor-playground-led
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

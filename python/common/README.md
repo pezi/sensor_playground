@@ -1,4 +1,4 @@
-# Shared Transports for Sensor Tester Python Nodes
+# Shared Transports for Sensor Playground Python Nodes
 
 This folder holds the protocol code shared by every Python sensor node —
 each node's `sensor_node.py` supplies only the sensor specifics:
@@ -11,7 +11,7 @@ each node's `sensor_node.py` supplies only the sensor specifics:
   `"transport": "ble"` is set in a node's `config.json`.
 
 Both mirror the corresponding contract of the ESP32 sketches, so the
-Sensor Tester app discovers and reads a Python node exactly like an ESP32
+Sensor Playground app discovers and reads a Python node exactly like an ESP32
 node — no app changes required.
 
 The nodes import these modules from the sibling folder (same mechanism as
@@ -190,4 +190,4 @@ subscribe to `...0002...`.
   is not allowed to register GATT applications; see prerequisites above.
 - **Truncated JSON in a generic BLE client** — the payload (~100–150 bytes)
   exceeds the default ATT MTU (23); request a larger MTU in the client (the
-  Sensor Tester app does this automatically).
+  Sensor Playground app does this automatically).

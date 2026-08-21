@@ -1,4 +1,4 @@
-"""MTU-safe framing for Sensor Tester BLE data notifications.
+"""MTU-safe framing for Sensor Playground BLE data notifications.
 
 Each packet is at most 20 bytes, which fits the payload available at BLE's
 mandatory 23-byte ATT MTU. The Flutter client also accepts legacy unframed

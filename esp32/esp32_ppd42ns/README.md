@@ -1,7 +1,7 @@
-# ESP32 Grove Dust Sensor (PPD42NS) Node for Sensor Tester
+# ESP32 Grove Dust Sensor (PPD42NS) Node for Sensor Playground
 
 This Arduino project reads a **Grove Dust Sensor** (Shinyei PPD42NS) on an
-ESP32 and serves a particle concentration to the Sensor Tester app.
+ESP32 and serves a particle concentration to the Sensor Playground app.
 https://wiki.seeedstudio.com/Grove-Dust_Sensor/
 
 > **Pollable, not push.** Unlike the digital contact sensors (button, PIR, …)

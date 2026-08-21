@@ -1,12 +1,12 @@
-# Grove 125KHz RFID Reader Node for Sensor Tester (Python)
+# Grove 125KHz RFID Reader Node for Sensor Playground (Python)
 
-This Python script implements the Sensor Tester sensor interface on
+This Python script implements the Sensor Playground sensor interface on
 single-board computers with a Grove 125KHz RFID Reader (EM4100-family
 tags). It is a *push* node: instead of serving readings over REST it
 pushes one JSON message per scanned tag over a **WebSocket** (`ws://`,
 port 9132, `X-Api-Key` checked on the handshake). The app discovers it
 via UDP broadcast on port 9133. Over BLE the node advertises the Sensor
-Tester GATT service instead and sends each scan as a notification.
+Playground GATT service instead and sends each scan as a notification.
 
 It is the Python/SoC counterpart of the ESP32 sketch in
 `../../esp32/esp32_rfid/` and supports the same two transports (Wi-Fi
@@ -139,9 +139,9 @@ scan.
 ## Running as a Service (optional)
 
 ```ini
-# /etc/systemd/system/sensor-tester-rfid.service
+# /etc/systemd/system/sensor-playground-rfid.service
 [Unit]
-Description=Sensor Tester RFID node
+Description=Sensor Playground RFID node
 After=network-online.target
 
 [Service]

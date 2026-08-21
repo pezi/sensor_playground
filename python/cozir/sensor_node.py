@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — CozIR CO2 Sensor (Python)
+Sensor Playground Sensor Node — CozIR CO2 Sensor (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a CozIR-A sensor (temperature, humidity, CO2).
 Unlike the other environment sensors the CozIR is not an I2C device: it
 talks a simple ASCII command protocol over a 9600-baud UART (serial).

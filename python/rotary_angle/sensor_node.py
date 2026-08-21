@@ -1,5 +1,5 @@
 """
-Sensor Tester Sensor Node — Grove Rotary Angle Sensor (Python, push)
+Sensor Playground Sensor Node — Grove Rotary Angle Sensor (Python, push)
 
 Reads a Grove Rotary Angle Sensor — a 10 kOhm potentiometer with 300° of
 mechanical travel — through an extension hat's ADC and reports the knob

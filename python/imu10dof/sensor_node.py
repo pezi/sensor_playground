@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — Grove IMU 10DOF (Python)
+Sensor Playground Sensor Node — Grove IMU 10DOF (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a Grove IMU 10DOF board (MPU9250 + BMP280).
 The MPU9250 axes are reduced to roll / pitch / compass heading angles plus
 the total acceleration magnitude (g-force); the BMP280 adds temperature and

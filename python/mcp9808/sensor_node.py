@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — MCP9808 (Python)
+Sensor Playground Sensor Node — MCP9808 (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a MCP9808 I2C sensor (temperature).
 
 - HTTPS REST API on port 9132 + UDP discovery on port 9133 (default), or

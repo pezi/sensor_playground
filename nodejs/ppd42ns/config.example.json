@@ -1,0 +1,9 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "pin": 17,
+  "transport": "wifi",
+  "emulation": false,
+  "ssl_cert": "cert.pem",
+  "ssl_key": "key.pem"
+}

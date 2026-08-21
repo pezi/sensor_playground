@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — BME280 (Python)
+Sensor Playground Sensor Node — BME280 (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a BME280 I2C sensor (temperature, humidity, pressure).
 
 - HTTPS REST API on port 9132 + UDP discovery on port 9133 (default), or

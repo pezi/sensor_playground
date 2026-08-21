@@ -1,0 +1,9 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "sensor_name": "AT24C128",
+  "i2c_bus": 1,
+  "i2c_address": "0x50",
+  "transport": "wifi",
+  "emulation": false
+}

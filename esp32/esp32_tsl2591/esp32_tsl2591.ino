@@ -1,7 +1,7 @@
 /*
- * Sensor Tester Sensor Node — ESP32 + TSL2591 (high dynamic range light)
+ * Sensor Playground Sensor Node — ESP32 + TSL2591 (high dynamic range light)
  *
- * Implements the Sensor Tester Sensor Interface (see docs/sensor.md).
+ * Implements the Sensor Playground Sensor Interface (see docs/sensor.md).
  * Reads a TSL2591 via I2C and reports visible light, infrared and a
  * lux-calibrated illuminance.
  *
@@ -55,7 +55,7 @@
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -400,7 +400,7 @@ void autoGain(uint16_t broadband) {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester Sensor Node ---");
+  Serial.println("\n--- Sensor Playground Sensor Node ---");
 
   Wire.begin();
   if (!tsl.begin()) {

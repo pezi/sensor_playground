@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — VL53L0X (Python)
+Sensor Playground Sensor Node — VL53L0X (Python)
 
-Implements the *push* variant of the Sensor Tester Sensor Interface on
+Implements the *push* variant of the Sensor Playground Sensor Interface on
 single-board computers (Raspberry Pi & co.) with a VL53L0X time-of-flight
 distance sensor. The node measures continuously and pushes one JSON message
 ({"distance": <mm>}, null when out of range) whenever the distance changes,

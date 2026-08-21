@@ -1,7 +1,7 @@
 """
-Sensor Tester Display Node — SSD1306 128x64 OLED (Python)
+Sensor Playground Display Node — SSD1306 128x64 OLED (Python)
 
-Implements the *display* variant of the Sensor Tester Sensor Interface on
+Implements the *display* variant of the Sensor Playground Sensor Interface on
 single-board computers (Raspberry Pi & co.) with an SSD1306 I2C OLED.
 Unlike sensor nodes this node consumes data: the app pushes one JSON
 command per action over the WebSocket and the node draws it on the panel.

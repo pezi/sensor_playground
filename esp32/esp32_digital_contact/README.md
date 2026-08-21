@@ -1,7 +1,7 @@
-# ESP32 Digital Contact Sensor Node for Sensor Tester
+# ESP32 Digital Contact Sensor Node for Sensor Playground
 
 One generic **push** node for the simple two-state Grove/BakeBit digital
-sensors — it reads a debounced GPIO and tells the Sensor Tester app whenever
+sensors — it reads a debounced GPIO and tells the Sensor Playground app whenever
 the state changes.
 
 > **Ignore the LED.** The original dart_periphery hat examples toggle a local

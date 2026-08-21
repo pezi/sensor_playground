@@ -1,0 +1,11 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "sensor_name": "BUTTON",
+  "active_low": true,
+  "interface": "gpio",
+  "gpio_chip": "/dev/gpiochip0",
+  "pin": 5,
+  "transport": "wifi",
+  "emulation": false
+}

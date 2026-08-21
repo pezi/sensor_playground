@@ -1,7 +1,7 @@
 /*
- * Sensor Tester Sensor Node — ESP32 + Grove Light Sensor (analog)
+ * Sensor Playground Sensor Node — ESP32 + Grove Light Sensor (analog)
  *
- * Implements the Sensor Tester Sensor Interface (see docs/sensor.md).
+ * Implements the Sensor Playground Sensor Interface (see docs/sensor.md).
  * Reads a Grove Light Sensor — an analog photo-resistor — on an ADC pin and
  * reports a raw brightness value (0-4095, the ESP32's 12-bit ADC range).
  * https://wiki.seeedstudio.com/Grove-Light_Sensor/
@@ -50,7 +50,7 @@
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -349,7 +349,7 @@ void transportLoop() {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester Sensor Node ---");
+  Serial.println("\n--- Sensor Playground Sensor Node ---");
 
   analogReadResolution(12);  // 0-4095
 

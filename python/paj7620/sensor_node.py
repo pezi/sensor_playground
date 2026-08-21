@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — PAJ7620 Grove Gesture (Python)
+Sensor Playground Sensor Node — PAJ7620 Grove Gesture (Python)
 
-Implements the *push* variant of the Sensor Tester Sensor Interface on
+Implements the *push* variant of the Sensor Playground Sensor Interface on
 single-board computers (Raspberry Pi & co.) with a Grove Gesture sensor
 (PAJ7620U2). The node polls the sensor and pushes one JSON message
 ({"gesture": "forward"}) per detected gesture.

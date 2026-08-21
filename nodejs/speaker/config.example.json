@@ -1,0 +1,9 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "speaker_pin": 5,
+  "gpio_chip": 0,
+  "sensor_name": "SPEAKER",
+  "transport": "wifi",
+  "emulation": true
+}

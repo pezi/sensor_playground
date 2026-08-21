@@ -1,6 +1,6 @@
-# TM1637 Clock Node for Sensor Tester (Python)
+# TM1637 Clock Node for Sensor Playground (Python)
 
-An **actuator** node: the Sensor Tester app shows a digital clock and syncs
+An **actuator** node: the Sensor Playground app shows a digital clock and syncs
 `hh:mm` to a Grove 4-Digit Display (TM1637), and the node reports the state it
 is actually displaying back. Once a time is set the node keeps the clock
 running on its own — it advances the minute and blinks the colon locally, so
@@ -8,7 +8,7 @@ the display stays a working clock even when the app is away.
 
 Over Wi-Fi both directions travel on one **WebSocket** (`ws://`, port 9132,
 `X-Api-Key` checked on the handshake), discovered via UDP broadcast on port
-9133. Over BLE the node advertises the Sensor Tester GATT service instead: the
+9133. Over BLE the node advertises the Sensor Playground GATT service instead: the
 state arrives as a notification and the commands as writes.
 
 It is the Python/SoC counterpart of `../../esp32/esp32_tm1637/` and supports
@@ -163,11 +163,11 @@ it echoes `12:35` on its own.
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-tm1637.service`:
+Create `/etc/systemd/system/sensor-playground-tm1637.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester TM1637 Clock Node
+Description=Sensor Playground TM1637 Clock Node
 After=network-online.target
 Wants=network-online.target
 
@@ -185,8 +185,8 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-tm1637
-sudo systemctl start sensor-tester-tm1637
+sudo systemctl enable sensor-playground-tm1637
+sudo systemctl start sensor-playground-tm1637
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

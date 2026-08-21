@@ -1,7 +1,7 @@
-# ESP32 Grove Light Sensor Node for Sensor Tester
+# ESP32 Grove Light Sensor Node for Sensor Playground
 
 This Arduino project reads a **Grove Light Sensor** (an analog photo-resistor)
-on an ESP32 and serves a raw brightness value to the Sensor Tester app.
+on an ESP32 and serves a raw brightness value to the Sensor Playground app.
 https://wiki.seeedstudio.com/Grove-Light_Sensor/
 
 > **Pollable, not push.** Unlike the digital contact sensors (button, PIR, …)

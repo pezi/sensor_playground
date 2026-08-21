@@ -15,7 +15,7 @@
 #include "secrets.h"
 
 // ===========================
-// UDP discovery (Sensor Tester contract, see docs/sensor.md)
+// UDP discovery (Sensor Playground contract, see docs/sensor.md)
 // The app broadcasts a "SENSOR_TESTER" probe on port 9133; this node
 // replies with a short-key JSON describing where to reach the camera.
 // ===========================

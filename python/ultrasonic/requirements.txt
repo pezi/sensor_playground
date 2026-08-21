@@ -1,0 +1,7 @@
+websockets>=13.0
+bless>=0.2.6   # BLE transport ("transport": "ble" in config.json)
+#
+# The sensor itself needs lgpio, which is NOT on this list because it cannot
+# be pip-installed here (the PyPI build needs swig and a C toolchain). On
+# current Raspberry Pi OS it ships as the system package python3-lgpio, so
+# create the venv with --system-site-packages (see README, "Setup").

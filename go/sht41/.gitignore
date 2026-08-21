@@ -1,0 +1,3 @@
+config.json
+*.pem
+sensor_node_sht41

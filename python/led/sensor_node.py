@@ -1,7 +1,7 @@
 """
-Sensor Tester LED Node — LED + optional push button (Python)
+Sensor Playground LED Node — LED + optional push button (Python)
 
-Implements the *actuator* variant of the Sensor Tester Sensor Interface on
+Implements the *actuator* variant of the Sensor Playground Sensor Interface on
 single-board computers (Raspberry Pi & co.). Like the TM1637 clock it talks
 in both directions: the app sends a switch command and the node reports the
 resulting state back, because the LED can also be toggled by a push button

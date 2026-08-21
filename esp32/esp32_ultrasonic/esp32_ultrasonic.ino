@@ -1,0 +1,358 @@
+/*
+ * Sensor Playground Sensor Node — ESP32 + Grove Ultrasonic Ranger
+ *
+ * Implements a *push* variant of the Sensor Playground Sensor Interface. Like the
+ * VL53L0X, a distance sensor is event-driven: the node measures continuously
+ * and pushes one JSON message whenever the distance changes (or at least once
+ * per second as a heartbeat):
+ *
+ *     {"distance": 234}      // millimeters
+ *     {"distance": null}     // no echo / target out of range
+ *
+ * The Grove Ultrasonic Ranger (40 kHz sonar, 2 cm - 3.5 m) uses a single SIG
+ * pin for both trigger and echo — unlike the common HC-SR04 with separate
+ * TRIG/ECHO pins. One measurement: drive SIG with a 10 µs pulse, switch the
+ * pin to input, and time the echo pulse the module answers with; the pulse
+ * width divided by twice the speed of sound is the distance.
+ *
+ * Transport is chosen at compile time via ACTIVE_TRANSPORT:
+ *   TRANSPORT_WIFI — WebSocket server on port 9132 (ws://, X-Api-Key header)
+ *                    + UDP discovery on port 9133 (SENSOR_TESTER contract)
+ *   TRANSPORT_BLE  — BLE GATT service; the app scans for SERVICE_UUID, writes
+ *                    the API key to AUTH_CHAR_UUID, then subscribes to
+ *                    DATA_CHAR_UUID; each measurement arrives as one notify.
+ *
+ * Required Libraries:
+ *   ArduinoJson, and for TRANSPORT_WIFI: WiFi, WiFiUdp,
+ *   WebSockets (by Markus Sattler / Links2004).
+ *   (BLE uses the ESP32 core's built-in BLE stack; the sensor needs none.)
+ */
+
+// ============================================================
+//  HARDWARE CONFIGURATION
+// ============================================================
+// GPIO the ranger's SIG line (yellow Grove wire) is connected to.
+const int SIG_PIN = 4;
+
+// --- Transport selection (change this line) ---
+#define TRANSPORT_WIFI 0
+#define TRANSPORT_BLE  1
+#ifndef ACTIVE_TRANSPORT
+#define ACTIVE_TRANSPORT TRANSPORT_BLE
+#endif
+
+#include <ArduinoJson.h>
+#include "secrets.h"
+
+#if ACTIVE_TRANSPORT == TRANSPORT_WIFI
+  #include <WiFi.h>
+  #include "../common/sensor_wifi_runtime.h"
+  #include <WiFiUdp.h>
+  #include <WebSocketsServer.h>
+#else
+  #include <BLEDevice.h>
+  #include <BLEServer.h>
+  #include <BLEUtils.h>
+  #include <BLE2902.h>
+  #include "../common/sensor_ble_framing.h"
+
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
+  #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
+  #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
+  #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
+#endif
+
+const char* SENSOR_NAME = "ULTRASONIC";
+
+// --- Measurement ---
+// The echo of a 3.5 m target takes ~20 ms; give up shortly after that. A
+// timed-out or out-of-range measurement is published as null.
+const unsigned long ECHO_TIMEOUT_US = 30000;
+const int MIN_RANGE_MM = 20;
+const int MAX_RANGE_MM = 3500;
+
+// --- Publish policy ---
+// Measure every MEASURE_INTERVAL_MS (the sonar needs a pause between pings
+// for the echo to die down); publish when the distance moved by at least
+// MIN_DELTA_MM, the in/out-of-range state flipped, or HEARTBEAT_MS elapsed
+// since the last publish. The delta is larger than the VL53L0X's because a
+// sonar reading jitters by a few millimeters.
+const unsigned long MEASURE_INTERVAL_MS = 100;
+const unsigned long HEARTBEAT_MS = 1000;
+const int MIN_DELTA_MM = 5;
+
+uint16_t lastSentMm = 0;
+bool lastSentValid = false;
+unsigned long lastMeasureMs = 0;
+unsigned long lastPublishMs = 0;
+bool everPublished = false;
+
+void transportPublish(bool valid, uint16_t mm);
+
+// One ping: trigger on SIG, then time the echo pulse on the same pin.
+// Returns true and the distance in [mmOut], or false without an echo in
+// range.
+bool measureDistance(uint16_t* mmOut) {
+  pinMode(SIG_PIN, OUTPUT);
+  digitalWrite(SIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(SIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(SIG_PIN, LOW);
+  pinMode(SIG_PIN, INPUT);
+
+  unsigned long duration = pulseIn(SIG_PIN, HIGH, ECHO_TIMEOUT_US);
+  if (duration == 0) return false;
+
+  // Sound travels 0.343 mm/µs; the pulse covers the distance twice.
+  long mm = (long)(duration * 343UL) / 2000L;
+  if (mm < MIN_RANGE_MM || mm > MAX_RANGE_MM) return false;
+  *mmOut = (uint16_t)mm;
+  return true;
+}
+
+#if ACTIVE_TRANSPORT == TRANSPORT_WIFI
+// ============================================================
+//  WIFI TRANSPORT (WebSocket push + UDP discovery)
+// ============================================================
+const int WS_PORT  = 9132;
+const int UDP_PORT = 9133;
+
+WiFiUDP udp;
+WebSocketsServer webSocket = WebSocketsServer(WS_PORT);
+
+// Clients must present this header on the WebSocket handshake.
+const char* MANDATORY_HEADERS[] = {"X-Api-Key"};
+const size_t MANDATORY_HEADER_COUNT = 1;
+
+bool validateApiKey(String headerName, String headerValue) {
+  if (headerName.equalsIgnoreCase("X-Api-Key")) {
+    headerValue.trim();
+    return headerValue == String(API_KEY);
+  }
+  return true;
+}
+
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
+  switch (type) {
+    case WStype_CONNECTED:
+      Serial.printf("[%u] Client connected\n", num);
+      break;
+    case WStype_DISCONNECTED:
+      Serial.printf("[%u] Client disconnected\n", num);
+      break;
+    default:
+      break;
+  }
+}
+
+void transportSetup() {
+  if (!connectSensorWifi(WIFI_SSID, WIFI_PASS)) {
+    Serial.println("Restarting after WiFi setup failure");
+    delay(1000);
+    ESP.restart();
+  }
+
+  webSocket.begin();
+  webSocket.onEvent(webSocketEvent);
+  webSocket.onValidateHttpHeader(validateApiKey, MANDATORY_HEADERS,
+                                 MANDATORY_HEADER_COUNT);
+
+  udp.begin(UDP_PORT);
+  Serial.println("WebSocket on port 9132, UDP on port 9133");
+}
+
+void handleUdpDiscovery() {
+  int packetSize = udp.parsePacket();
+  if (!packetSize) return;
+
+  char buffer[64];
+  int len = udp.read(buffer, sizeof(buffer) - 1);
+  buffer[len] = '\0';
+  if (strstr(buffer, "SENSOR_TESTER") == NULL) return;
+
+  // A push node has no pollable readings to advertise, only its identity.
+  StaticJsonDocument<256> doc;
+  doc["type"] = SENSOR_NAME;
+  doc["host"] = HOSTNAME;
+  doc["ip"]   = WiFi.localIP().toString();
+  doc["port"] = WS_PORT;
+  String json;
+  serializeJson(doc, json);
+
+  udp.beginPacket(udp.remoteIP(), udp.remotePort());
+  udp.print(json);
+  udp.endPacket();
+}
+
+void transportLoop() {
+  if (!sensorWifiReady()) {
+    delay(10);
+    return;
+  }
+  webSocket.loop();
+  handleUdpDiscovery();
+}
+
+void transportPublish(bool valid, uint16_t mm) {
+  if (webSocket.connectedClients() == 0) return;
+  StaticJsonDocument<64> doc;
+  if (valid) {
+    doc["distance"] = mm;
+  } else {
+    doc["distance"] = nullptr;
+  }
+  String out;
+  serializeJson(doc, out);
+  webSocket.broadcastTXT(out);
+}
+
+#else
+// ============================================================
+//  BLE TRANSPORT (notify per measurement)
+// ============================================================
+BLECharacteristic* dataChar = nullptr;
+bool deviceConnected = false;
+bool authed = false;
+
+class ServerCallbacks : public BLEServerCallbacks {
+  void onConnect(BLEServer* server) override { deviceConnected = true; }
+  void onDisconnect(BLEServer* server) override {
+    deviceConnected = false;
+    authed = false;
+    server->getAdvertising()->start();  // allow the next client to find us
+  }
+};
+
+// Client must write the shared API key here before measurements are served.
+class AuthCallbacks : public BLECharacteristicCallbacks {
+  void onWrite(BLECharacteristic* characteristic) override {
+    String val = characteristic->getValue();
+    while (val.length() > 0 && (val[val.length() - 1] == '\0' || val[val.length() - 1] == '\r' || val[val.length() - 1] == '\n')) {
+      val.remove(val.length() - 1);
+    }
+    authed = (val == API_KEY);
+    Serial.println(authed ? "Client authorized" : "Bad API key");
+    // Push the current distance right after a successful authorization.
+    if (authed) {
+      StaticJsonDocument<64> doc;
+      if (lastSentValid) {
+        doc["distance"] = lastSentMm;
+      } else {
+        doc["distance"] = nullptr;
+      }
+      String out;
+      serializeJson(doc, out);
+      notifySensorJson(dataChar, out);
+    }
+  }
+};
+
+// Serve the cached last measurement only to an authorized client.
+class DataCallbacks : public BLECharacteristicCallbacks {
+  void onRead(BLECharacteristic* characteristic) override {
+    if (authed) {
+      StaticJsonDocument<64> doc;
+      if (lastSentValid) {
+        doc["distance"] = lastSentMm;
+      } else {
+        doc["distance"] = nullptr;
+      }
+      String out;
+      serializeJson(doc, out);
+      characteristic->setValue(out.c_str());
+    } else {
+      characteristic->setValue("{}");
+    }
+  }
+};
+
+void transportSetup() {
+  BLEDevice::init(SENSOR_NAME);
+  BLEServer* server = BLEDevice::createServer();
+  server->setCallbacks(new ServerCallbacks());
+
+  BLEService* service = server->createService(SERVICE_UUID);
+
+  dataChar = service->createCharacteristic(
+    DATA_CHAR_UUID,
+    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+  dataChar->addDescriptor(new BLE2902());
+  dataChar->setCallbacks(new DataCallbacks());
+
+  BLECharacteristic* authChar = service->createCharacteristic(
+    AUTH_CHAR_UUID, BLECharacteristic::PROPERTY_WRITE);
+  authChar->setCallbacks(new AuthCallbacks());
+
+  service->start();
+
+  BLEAdvertising* advertising = BLEDevice::getAdvertising();
+  advertising->addServiceUUID(SERVICE_UUID);
+  advertising->setScanResponse(true);
+  BLEDevice::startAdvertising();
+  Serial.println("BLE advertising started");
+}
+
+void transportLoop() {
+  delay(1);
+}
+
+void transportPublish(bool valid, uint16_t mm) {
+  if (!deviceConnected || !authed) return;
+  StaticJsonDocument<64> doc;
+  if (valid) {
+    doc["distance"] = mm;
+  } else {
+    doc["distance"] = nullptr;
+  }
+  String out;
+  serializeJson(doc, out);
+  notifySensorJson(dataChar, out);
+}
+#endif
+
+// ============================================================
+void setup() {
+  Serial.begin(115200);
+  Serial.println("\n--- Sensor Playground Sensor Node ---");
+
+  pinMode(SIG_PIN, INPUT);
+  uint16_t mm;
+  if (measureDistance(&mm)) {
+    Serial.printf("First reading: %u mm\n", mm);
+  } else {
+    // No echo also just means no target in range, so this is not fatal.
+    Serial.printf("No echo on GPIO %d yet (no target, or check wiring)\n",
+                  SIG_PIN);
+  }
+
+  transportSetup();
+
+  Serial.print("Sensor: ");
+  Serial.println(SENSOR_NAME);
+}
+
+// ============================================================
+void loop() {
+  transportLoop();
+
+  if (millis() - lastMeasureMs < MEASURE_INTERVAL_MS) {
+    delay(1);
+    return;
+  }
+  lastMeasureMs = millis();
+
+  uint16_t mm = 0;
+  bool valid = measureDistance(&mm);
+
+  bool changed = !everPublished ||
+                 valid != lastSentValid ||
+                 (valid && abs((int)mm - (int)lastSentMm) >= MIN_DELTA_MM);
+  if (changed || millis() - lastPublishMs >= HEARTBEAT_MS) {
+    transportPublish(valid, mm);
+    everPublished = true;
+    lastSentValid = valid;
+    lastSentMm = mm;
+    lastPublishMs = millis();
+  }
+}

@@ -1,0 +1,5 @@
+# Compiled node binaries (any folder)
+sensor_node_*
+# Per-node secrets and TLS material (config.example.json stays tracked)
+config.json
+*.pem

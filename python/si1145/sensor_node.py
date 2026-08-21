@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — SI1145 (Python)
+Sensor Playground Sensor Node — SI1145 (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a SI1145 I2C sensor (visible light, infrared, UV index).
 
 - HTTPS REST API on port 9132 + UDP discovery on port 9133 (default), or

@@ -1,11 +1,11 @@
-# VL53L0X Sensor Node for Sensor Tester (Python)
+# VL53L0X Sensor Node for Sensor Playground (Python)
 
-This Python script implements the Sensor Tester sensor interface on
+This Python script implements the Sensor Playground sensor interface on
 single-board computers with a VL53L0X I2C sensor (distance (time of flight)).
 It is a *push* node: instead of serving readings over REST it pushes
 one JSON message per event over a **WebSocket** (`ws://`, port 9132,
 `X-Api-Key` checked on the handshake). The app discovers it via UDP
-broadcast on port 9133. Over BLE the node advertises the Sensor Tester
+broadcast on port 9133. Over BLE the node advertises the Sensor Playground
 GATT service instead and sends each event as a notification.
 
 It is the Python/SoC counterpart of the ESP32 sketch in
@@ -116,11 +116,11 @@ websocat -H='X-Api-Key: your-sensor-api-key' ws://localhost:9132/
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-vl53l0x.service`:
+Create `/etc/systemd/system/sensor-playground-vl53l0x.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester VL53L0X Node
+Description=Sensor Playground VL53L0X Node
 After=network-online.target
 Wants=network-online.target
 
@@ -140,8 +140,8 @@ Then enable and start:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-vl53l0x
-sudo systemctl start sensor-tester-vl53l0x
+sudo systemctl enable sensor-playground-vl53l0x
+sudo systemctl start sensor-playground-vl53l0x
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

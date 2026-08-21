@@ -1,5 +1,5 @@
 """
-Sensor Tester Sensor Node — Digital Contact Sensor (Python, push)
+Sensor Playground Sensor Node — Digital Contact Sensor (Python, push)
 
 One generic *push* node for the simple two-state Grove/BakeBit digital sensors
 that react to an event:
@@ -18,7 +18,7 @@ state changes:
     {"active": false}   sensor released
 
 The original dart_periphery examples toggle a local LED; this node ignores
-that and reports the state to the Sensor Tester app instead.
+that and reports the state to the Sensor Playground app instead.
 
 The input is read either through an Arduino-based extension hat (the sibling
 `extension_hat` helper — NanoHat Hub / GrovePi+) or directly from a Raspberry

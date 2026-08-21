@@ -9,12 +9,17 @@ class single-board computers, turning a sensor and a board into a node the app
 discovers and reads over your own network — no cloud, no account.
 
 [![Get it on Google Play](https://img.shields.io/badge/Google_Play-Download-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=app.flutterdev.sensortester)
+[![Get it on the App Store](https://img.shields.io/badge/App_Store-Download-0D96F6?style=flat&logo=app-store&logoColor=white)](https://apps.apple.com/us/app/sensor-playground/id6778514035)
 [![Licence: MIT](https://img.shields.io/badge/Licence-MIT-green)](LICENSE)
 
 Every supported sensor exists in **two parallel implementations** — one Arduino
 sketch, one Python script — that speak the identical wire protocol. The app
 cannot tell them apart, so you can start on an ESP32 and move the same sensor to
 a Raspberry Pi (or the reverse) without touching the app.
+
+Every node additionally exists as an **experimental** Go, Node.js and Rust port
+(see [Language ports](#language-ports-go-nodejs-rust--experimental)) — same
+protocol, same config, different language.
 
 ---
 
@@ -26,11 +31,15 @@ a Raspberry Pi (or the reverse) without touching the app.
   - [Supported sensors](#supported-sensors)
     - [Environment \& air quality](#environment--air-quality)
     - [Light \& optical](#light--optical)
+    - [Soil moisture](#soil-moisture)
     - [Motion, orientation \& position](#motion-orientation--position)
     - [Event-driven](#event-driven)
     - [Display](#display)
     - [Actuator](#actuator)
+    - [Storage](#storage)
+    - [Camera](#camera)
   - [Repository layout](#repository-layout)
+  - [Language ports (Go, Node.js, Rust) — experimental](#language-ports-go-nodejs-rust--experimental)
   - [Quick start — ESP32](#quick-start--esp32)
   - [Quick start — Raspberry Pi / SBC](#quick-start--raspberry-pi--sbc)
     - [BLE on Linux](#ble-on-linux)
@@ -71,11 +80,11 @@ Nodes come in five flavours, and the app opens a different screen for each:
 
 | Kind | Behaviour | Sensors |
 |------|-----------|---------|
-| **Pollable** | App requests a reading (HTTPS every 3 s, or BLE read/notify at 1 Hz) | Environment, light, optical, GPS, dust |
+| **Pollable** | App requests a reading (HTTPS every 3 s, or BLE read/notify at 1 Hz) | Environment, light, optical, soil moisture, GPS, dust |
 | **Streaming** | Node pushes continuously (WebSocket or BLE notify, every 250 ms) | IMU 10DOF, MMA7660, MPU6050 |
-| **Event push** | Node sends one message per event | PAJ7620 gesture, VL53L0X distance, 125KHz RFID reader, NFC tag content, contact sensors, rotary angle |
+| **Event push** | Node sends one message per event | PAJ7620 gesture, VL53L0X and ultrasonic distance, 125KHz RFID reader, NFC tag content, contact sensors, rotary angle |
 | **Display** | Reverse direction — the **app** sends bitmaps to the node | SSD1306 OLED |
-| **Actuator** | Both directions — the app commands it, the node reports the result | LED (+ optional local button), TM1637 4-digit clock |
+| **Actuator** | Both directions — the app commands it, the node reports the result | LED (+ optional local button), TM1637 4-digit clock, Grove speaker, Grove SPDT relay, AT24C128 EEPROM |
 
 The Python sensor nodes additionally support an **emulation mode**
 (`"emulation": true` in `config.json`) that generates plausible readings with no
@@ -85,7 +94,9 @@ hardware attached, so you can exercise the app before wiring anything up.
 
 ## Supported sensors
 
-27 sensors, one display and two actuators, each available for both platforms.
+38 sensors, one display, one EEPROM, four actuators and the ESP32-CAM
+camera — each available for both platforms (the ESP32-CAM is naturally
+ESP32-only).
 
 ### Environment & air quality
 
@@ -98,7 +109,10 @@ hardware attached, so you can exercise the app before wiring anything up.
 | SGP30 | eCO₂, TVOC | I²C |
 | CozIR-A | Temperature, humidity, CO₂ | Serial |
 | SHT31 / SHT41 | Temperature, humidity | I²C |
+| SHT11 (SHT1x family) | Temperature, humidity | Digital (bit-banged 2-wire) |
 | AHT10 / AHT20 | Temperature, humidity | I²C |
+| DHT11 | Temperature, humidity | Digital (single-wire) |
+| DHT22 | Temperature, humidity (wider range, 0.1 resolution) | Digital (single-wire) |
 | MCP9808 | Temperature (high accuracy) | I²C |
 | MLX90615 | Object + ambient temperature (non-contact IR) | I²C |
 | Grove Dust Sensor (PPD42NS) | Dust concentration (pcs/0.01cf, 30 s LPO windows) | Digital |
@@ -110,7 +124,19 @@ hardware attached, so you can exercise the app before wiring anything up.
 | SI1145 | Visible light, infrared, UV index | I²C |
 | TSL2591 | Visible light, infrared, illuminance (lux) | I²C |
 | TCS34725 | RGB colour, colour temperature, illuminance | I²C |
+| ISL29125 | RGB colour, approximate illuminance | I²C |
 | Grove Light Sensor | Brightness (raw) | Analog |
+
+### Soil moisture
+
+| Sensor | Measures | Bus |
+|--------|----------|-----|
+| Grove Capacitive Moisture Sensor (Corrosion-Resistant) | Soil moisture (%, between dry/wet calibration points) | Analog |
+| Chirp I2C Soil Moisture Sensor (Catnip Electronics) | Soil moisture (%), soil temperature, ambient light | I²C |
+
+Both nodes report their raw reading alongside the percentage (`adc`/`adcMax`
+and `cap` respectively), so the dry and wet calibration points can be read
+off with the probe in dry air and in a glass of water.
 
 ### Motion, orientation & position
 
@@ -127,6 +153,7 @@ hardware attached, so you can exercise the app before wiring anything up.
 |--------|---------|-----|
 | PAJ7620 | Hand gestures (9 basic) | I²C |
 | VL53L0X | Distance (time-of-flight laser) | I²C |
+| Grove Ultrasonic Ranger | Distance (echo time, 20–3500 mm) | Digital (single SIG pin) |
 | Grove 125KHz RFID Reader | EM4100 tag id (5-byte hex) | Serial |
 | Grove NFC Tag (M24LR64E) | NDEF content written over RF (text/URI/data) | I²C |
 | Button, Hall, Magnetic switch, PIR, Vibration, Line Finder | Active / inactive | Digital |
@@ -157,13 +184,30 @@ rather than assuming one of them.
 |--------|---------|---------|-----|
 | LED | On, off, toggle | Its current state | Digital |
 | Grove 4-Digit Display (TM1637) | Time (`hh:mm`), brightness | Its displayed state | Digital (2-wire) |
+| Grove Speaker | One tone (freq + duration), built-in melody, stop | What is sounding (`freq`, 0 = silent) | Digital (PWM) |
+| Relay boards, 1-8 channels (Grove SPDT, SunFounder & clones) | One channel on / off / toggle, or every channel at once | The state of every channel, and how many the board has | Digital (one pin per channel) / I²C (Grove 4-channel module) |
 
 The actuators are two-way nodes: the app commands them and the node reports
 the resulting state back. For the LED that is what makes an optional push
 button wired to the node show up in the app; for the TM1637 clock it is what
 keeps the app honest about the time the display actually shows — once set,
 the node advances the minute and blinks the colon on its own, publishing each
-minute rollover.
+minute rollover. The speaker reports every state change too, including a
+tone ending on its own when its duration runs out.
+
+### Storage
+
+| Device | Accepts | Reports | Bus |
+|--------|---------|---------|-----|
+| AT24C128 EEPROM | A text (max. 128 characters), stored on-chip | The stored text, on connect and after every write | I²C |
+
+### Camera
+
+| Device | Streams | Firmware |
+|--------|---------|----------|
+| ESP32-CAM (AI-Thinker & co.) | MJPEG video + picture controls | `CameraWebServer/` (plain HTTP), `CameraWebServerWS/` (WebSocket), `CameraWebServerBLE/` (BLE, still-image-first, VGA-capped) |
+
+The camera is ESP32-only — there is no Python counterpart.
 
 ---
 
@@ -190,10 +234,51 @@ python/                    Python nodes (one folder per sensor)
     README.md              Wiring, setup, testing
   common/                  Shared BLE GATT transport used by every node
   extension_hat/           Grove / BakeBit hat helper (not a node)
+
+go/                        Go ports (Wi-Fi/WebSocket only) + common/ package
+nodejs/                    Node.js ports (Wi-Fi/WebSocket only) + common/ folder
+rust/                      Rust ports (Wi-Fi/WebSocket + BLE) + common/ crate
 ```
 
 Each node folder has its own README with wiring diagrams, dependencies and test
 commands. Start there for the sensor you actually own.
+
+---
+
+## Language ports (Go, Node.js, Rust) — experimental
+
+The `go/`, `nodejs/` and `rust/` folders hold ports of **every** Python node —
+all 39 of them — speaking the identical wire protocol. The app cannot tell
+them apart either. Like `python/`, each language keeps its shared transports in
+a `common/` sibling, and every node folder has its own README.
+
+> **Experimental — the Arduino sketches and the Python scripts are the
+> reference.** Those two are what the app is developed against and what runs on
+> real hardware here. The ports are a proof that the node contract is
+> language-neutral, and they are held to it: every driver's conversion maths is
+> unit-tested against readings produced by the Python driver, and every node in
+> every language is started in emulation and probed for UDP discovery plus its
+> data plane before release. But **most ports have never been run against the
+> physical sensor** — only a handful have — so a register map transcribed
+> correctly can still meet a chip that disagrees. For a sensor you actually
+> own, get it working with the Python node first, then switch language. Expect
+> the ports to trail the Python nodes when a node gains a feature, and please
+> report anything that behaves differently.
+
+The three ports are also not equivalent in reach:
+
+| | Go | Node.js | Rust |
+|---|---|---|---|
+| Wi-Fi (REST / WebSocket + UDP discovery) | yes | yes | yes |
+| BLE GATT | — | — | yes |
+| Timing-critical GPIO (dht11, dht22, sht11, ppd42ns, ultrasonic, tm1637, speaker) | yes | emulation only | yes |
+| Arduino-based hats (`"nano"`, `"grovePlus"`) | — | — | — |
+
+Go and Node.js print a warning and fall back to Wi-Fi when a config asks for
+`"transport": "ble"`. Node cannot produce microsecond GPIO timing, so the
+single-wire and bit-banged sensors run there in emulation mode only — including
+the speaker, whose tone is a square wave of up to 20 kHz. For the Arduino-based
+extension hats, use the Python node.
 
 ---
 
@@ -318,8 +403,11 @@ deployment. A node uses one at a time.
 
 ### UDP discovery (Wi-Fi)
 
-The app broadcasts `SENSOR_TESTER` on port 9133. Nodes reply with their
-identity, plus a short-key preview of the current reading for pollable sensors:
+The app broadcasts `SENSOR_TESTER` on port 9133. (The probe string keeps the
+app's historic name — "Sensor Tester" — as a fixed wire-protocol token, so
+already-flashed nodes and older app versions stay compatible.) Nodes reply
+with their identity, plus a short-key preview of the current reading for
+pollable sensors:
 
 ```json
 {"type":"BME680","host":"raspberrypi","ip":"192.168.1.42","port":9132,"temp":22.4}

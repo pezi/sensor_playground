@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — Grove 125KHz RFID Reader (Python)
+Sensor Playground Sensor Node — Grove 125KHz RFID Reader (Python)
 
-Implements the *push* variant of the Sensor Tester Sensor Interface on
+Implements the *push* variant of the Sensor Playground Sensor Interface on
 single-board computers (Raspberry Pi & co.) with a Grove 125KHz RFID
 Reader. The node reads RDM630-style frames from a 9600-baud UART and
 pushes one JSON message ({"tag": "0F0024ADAB"}) per scanned EM4100 tag.

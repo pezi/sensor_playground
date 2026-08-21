@@ -1,0 +1,17 @@
+[package]
+name = "sensor-playground-nfctag"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "sensor_node_nfctag"
+path = "src/main.rs"
+
+[dependencies]
+common = { package = "sensor-playground-common", path = "../common" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = { workspace = true }

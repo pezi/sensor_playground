@@ -1,0 +1,17 @@
+[package]
+name = "sensor-playground-at24c128"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "sensor_node_at24c128"
+path = "src/main.rs"
+
+[dependencies]
+common = { package = "sensor-playground-common", path = "../common" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = { workspace = true }

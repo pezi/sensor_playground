@@ -1,7 +1,7 @@
-# ESP32 SSD1306 Display Node for Sensor Tester
+# ESP32 SSD1306 Display Node for Sensor Playground
 
 This Arduino project drives an **SSD1306 128×64 I2C OLED display** on an ESP32
-and shows bitmaps pushed by the Sensor Tester app.
+and shows bitmaps pushed by the Sensor Playground app.
 
 > **Why a WebSocket instead of REST?** The environment sensors (BME680,
 > SCD30, …) expose values the app polls. A display has nothing to poll — the
@@ -81,7 +81,7 @@ The sketch requests a 517-byte MTU; at the 23-byte default a frame would take
 ~52 writes instead of ~3.
 
 The data characteristic carries no readings (a display produces none) and
-always reads `{}`. It exists so every Sensor Tester node exposes the same
+always reads `{}`. It exists so every Sensor Playground node exposes the same
 characteristics and the app can connect with one code path.
 
 Commands are ignored until the API key has been written, and a disconnect
@@ -146,7 +146,7 @@ arduino-cli monitor -p <serial-port> --config baudrate=115200
 
 1. Copy `secrets.h.example` to `secrets.h`.
 2. Edit `secrets.h` and enter your WiFi SSID, Password, and the API Key
-   that clients (the Sensor Tester app) must present.
+   that clients (the Sensor Playground app) must present.
 
 **Note:** `secrets.h` is excluded from Git to protect your credentials.
 

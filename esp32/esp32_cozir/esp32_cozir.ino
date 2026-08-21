@@ -1,7 +1,7 @@
 /*
- * Sensor Tester Sensor Node — ESP32 + CozIR CO2 Sensor
+ * Sensor Playground Sensor Node — ESP32 + CozIR CO2 Sensor
  *
- * Implements the Sensor Tester Sensor Interface (see docs/sensor.md).
+ * Implements the Sensor Playground Sensor Interface (see docs/sensor.md).
  * Reads a CozIR-A (temperature, humidity, CO2) via a 9600-baud UART —
  * unlike the other environment sensors this is a serial device, not I2C.
  *
@@ -56,7 +56,7 @@
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -378,7 +378,7 @@ void transportLoop() {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester Sensor Node ---");
+  Serial.println("\n--- Sensor Playground Sensor Node ---");
 
   Serial2.begin(9600, SERIAL_8N1, COZIR_RX_PIN, COZIR_TX_PIN);
   Serial2.setTimeout(1000);

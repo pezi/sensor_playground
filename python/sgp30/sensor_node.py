@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — SGP30 (Python)
+Sensor Playground Sensor Node — SGP30 (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a SGP30 I2C sensor (eCO2, TVOC).
 
 - HTTPS REST API on port 9132 + UDP discovery on port 9133 (default), or

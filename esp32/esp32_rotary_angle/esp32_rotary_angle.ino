@@ -1,5 +1,5 @@
 /*
- * Sensor Tester Sensor Node — ESP32 + Grove Rotary Angle Sensor (analog, push)
+ * Sensor Playground Sensor Node — ESP32 + Grove Rotary Angle Sensor (analog, push)
  *
  * Reads a Grove Rotary Angle Sensor — a 10 kOhm potentiometer with 300° of
  * mechanical travel — on an ADC pin and reports the knob position.
@@ -92,7 +92,7 @@ const int OVERSAMPLE = 8;
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -312,7 +312,7 @@ void transportPublish(int adc) {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester Sensor Node ---");
+  Serial.println("\n--- Sensor Playground Sensor Node ---");
 
   analogReadResolution(ADC_BITS);  // 0-4095
   // Full-scale attenuation: the Grove sensor swings the whole 0-3.3 V rail,

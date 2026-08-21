@@ -1,8 +1,8 @@
 """
-Sensor Tester BLE Client Check (Python)
+Sensor Playground BLE Client Check (Python)
 
 Small bleak client to verify a BLE sensor node (Python or ESP32): scans for
-the Sensor Tester service, connects, exercises the auth flow and prints
+the Sensor Playground service, connects, exercises the auth flow and prints
 notifications for a few seconds.
 
 Usage:
@@ -28,14 +28,17 @@ async def main():
     api_key = sys.argv[1]
     name = sys.argv[2] if len(sys.argv) > 2 else None
 
-    print("Scanning for Sensor Tester service...")
+    print("Scanning for Sensor Playground service...")
     device = await BleakScanner.find_device_by_filter(
+        # Match the advertised local name as well: the device name arrives in
+        # the scan response and may not be merged into d.name yet at
+        # callback time (seen on macOS with slow legacy-interval advertisers).
         lambda d, ad: SERVICE_UUID in (ad.service_uuids or [])
-        and (name is None or d.name == name),
+        and (name is None or name in (d.name, ad.local_name)),
         timeout=15.0,
     )
     if device is None:
-        sys.exit("No Sensor Tester BLE device found")
+        sys.exit("No Sensor Playground BLE device found")
     print(f"Connecting to {device.name} ({device.address})")
 
     async with BleakClient(device) as client:

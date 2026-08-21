@@ -1,11 +1,11 @@
-# Digital Contact Sensor Node for Sensor Tester (Python)
+# Digital Contact Sensor Node for Sensor Playground (Python)
 
 One generic **push** node for the simple two-state Grove/BakeBit digital
-sensors. It polls a debounced input and tells the Sensor Tester app whenever
+sensors. It polls a debounced input and tells the Sensor Playground app whenever
 the state changes — over Wi-Fi as one JSON message per event on a
 **WebSocket** (`ws://`, port 9132, `X-Api-Key` checked on the handshake),
 discovered via UDP broadcast on port 9133. Over BLE the node advertises the
-Sensor Tester GATT service instead and sends each event as a notification.
+Sensor Playground GATT service instead and sends each event as a notification.
 
 It is the Python/SoC counterpart of
 `../../esp32/esp32_digital_contact/` and supports the same two transports
@@ -139,11 +139,11 @@ the current state.
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-contact.service`:
+Create `/etc/systemd/system/sensor-playground-contact.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester Digital Contact Node
+Description=Sensor Playground Digital Contact Node
 After=network-online.target
 Wants=network-online.target
 
@@ -161,8 +161,8 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-contact
-sudo systemctl start sensor-tester-contact
+sudo systemctl enable sensor-playground-contact
+sudo systemctl start sensor-playground-contact
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

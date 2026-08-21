@@ -1,0 +1,9 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "sig_pin": 4,
+  "gpio_chip": 0,
+  "sensor_name": "ULTRASONIC",
+  "transport": "wifi",
+  "emulation": false
+}

@@ -1,0 +1,12 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "i2c_bus": 1,
+  "address": 32,
+  "cap_dry": 290,
+  "cap_wet": 520,
+  "transport": "wifi",
+  "emulation": false,
+  "ssl_cert": "cert.pem",
+  "ssl_key": "key.pem"
+}

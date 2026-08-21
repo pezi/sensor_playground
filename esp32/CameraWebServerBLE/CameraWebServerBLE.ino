@@ -1,9 +1,9 @@
 /*
- * Sensor Tester ESP32-CAM Node — BLE variant
+ * Sensor Playground ESP32-CAM Node — BLE variant
  *
  * BLE-only counterpart of the CameraWebServer (HTTP) and CameraWebServerWS
  * (WebSocket) sketches: camera status, camera controls and the JPEG video
- * all travel over one GATT connection, using the shared Sensor Tester
+ * all travel over one GATT connection, using the shared Sensor Playground
  * service contract (write the API key to the auth characteristic first).
  *
  * BLE is slow compared to Wi-Fi — roughly 20-100 KB/s depending on the
@@ -71,7 +71,7 @@
 // ===========================
 #include "secrets.h"
 
-// Shared Sensor Tester GATT contract (must match the app's BleUuids).
+// Shared Sensor Playground GATT contract (must match the app's BleUuids).
 #define SERVICE_UUID    "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
 #define DATA_CHAR_UUID  "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
 #define AUTH_CHAR_UUID  "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"

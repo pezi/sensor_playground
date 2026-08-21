@@ -1,0 +1,29 @@
+[package]
+name = "sensor-playground-common"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared transports (Wi-Fi, WebSocket, BLE) for the Rust Sensor Playground nodes"
+
+[lib]
+name = "common"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+rustls = { workspace = true }
+rustls-pemfile = { workspace = true }
+socket2 = { workspace = true }
+sha2 = { workspace = true }
+hostname = { workspace = true }
+tungstenite = { workspace = true }
+fastrand = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+bluer = { workspace = true }
+tokio = { workspace = true }
+uuid = { workspace = true }
+libc = { workspace = true }
+futures = { workspace = true }
+dbus = { workspace = true }

@@ -1,0 +1,16 @@
+[package]
+name = "sensor-playground-ssd1306"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "sensor_node_ssd1306"
+path = "src/main.rs"
+
+[dependencies]
+common = { package = "sensor-playground-common", path = "../common" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+libc = { workspace = true }

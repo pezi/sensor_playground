@@ -1,5 +1,5 @@
 """
-Shared Wi-Fi transport for Sensor Tester python nodes.
+Shared Wi-Fi transport for Sensor Playground python nodes.
 
 Every node speaks the same Wi-Fi protocol:
 

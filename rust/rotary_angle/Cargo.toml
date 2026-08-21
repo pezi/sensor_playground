@@ -1,0 +1,14 @@
+[package]
+name = "sensor-playground-rotary_angle"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "sensor_node_rotary_angle"
+path = "src/main.rs"
+
+[dependencies]
+common = { package = "sensor-playground-common", path = "../common" }
+serde = { workspace = true }
+serde_json = { workspace = true }

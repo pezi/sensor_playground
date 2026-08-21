@@ -1,7 +1,7 @@
 /*
- * Sensor Tester Sensor Node — ESP32 + SGP30
+ * Sensor Playground Sensor Node — ESP32 + SGP30
  *
- * Implements the Sensor Tester Sensor Interface (see docs/sensor.md).
+ * Implements the Sensor Playground Sensor Interface (see docs/sensor.md).
  * Reads an SGP30 air-quality sensor (eCO2, TVOC) via I2C.
  *
  * Transport is chosen at compile time via ACTIVE_TRANSPORT:
@@ -51,7 +51,7 @@
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -359,7 +359,7 @@ void transportLoop() {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester Sensor Node ---");
+  Serial.println("\n--- Sensor Playground Sensor Node ---");
 
   Wire.begin();
   if (!sgp.begin()) {

@@ -1,11 +1,11 @@
-# PAJ7620 Sensor Node for Sensor Tester (Python)
+# PAJ7620 Sensor Node for Sensor Playground (Python)
 
-This Python script implements the Sensor Tester sensor interface on
+This Python script implements the Sensor Playground sensor interface on
 single-board computers with a PAJ7620 I2C sensor (hand gestures).
 It is a *push* node: instead of serving readings over REST it pushes
 one JSON message per event over a **WebSocket** (`ws://`, port 9132,
 `X-Api-Key` checked on the handshake). The app discovers it via UDP
-broadcast on port 9133. Over BLE the node advertises the Sensor Tester
+broadcast on port 9133. Over BLE the node advertises the Sensor Playground
 GATT service instead and sends each event as a notification.
 
 It is the Python/SoC counterpart of the ESP32 sketch in
@@ -87,11 +87,11 @@ websocat -H='X-Api-Key: your-sensor-api-key' ws://localhost:9132/
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-paj7620.service`:
+Create `/etc/systemd/system/sensor-playground-paj7620.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester PAJ7620 Node
+Description=Sensor Playground PAJ7620 Node
 After=network-online.target
 Wants=network-online.target
 
@@ -111,8 +111,8 @@ Then enable and start:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-paj7620
-sudo systemctl start sensor-tester-paj7620
+sudo systemctl enable sensor-playground-paj7620
+sudo systemctl start sensor-playground-paj7620
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

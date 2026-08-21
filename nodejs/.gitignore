@@ -1,0 +1,6 @@
+# Installed dependencies (any folder, including common/)
+node_modules/
+package-lock.json
+# Per-node secrets and TLS material (config.example.json stays tracked)
+config.json
+*.pem

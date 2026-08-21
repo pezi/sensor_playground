@@ -1,7 +1,7 @@
 /*
- * Sensor Tester Display Node — ESP32 + SSD1306 (128x64 I2C OLED)
+ * Sensor Playground Display Node — ESP32 + SSD1306 (128x64 I2C OLED)
  *
- * Implements the *display* variant of the Sensor Tester Sensor Interface.
+ * Implements the *display* variant of the Sensor Playground Sensor Interface.
  * Unlike sensor nodes this node consumes data: the app pushes one command
  * per action and the node draws it on the panel. Over Wi-Fi a command is
  * one JSON message:
@@ -70,7 +70,7 @@
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -425,7 +425,7 @@ void transportSetup() {
   BLEService* service = server->createService(SERVICE_UUID);
 
   // A display node produces no readings, but it carries the data
-  // characteristic anyway so every Sensor Tester node exposes the same
+  // characteristic anyway so every Sensor Playground node exposes the same
   // three characteristics and the app can connect with one code path.
   BLECharacteristic* dataChar = service->createCharacteristic(
     DATA_CHAR_UUID,
@@ -461,7 +461,7 @@ void transportLoop() {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester Display Node ---");
+  Serial.println("\n--- Sensor Playground Display Node ---");
 
   Wire.begin();
   Wire.beginTransmission(OLED_ADDRESS);

@@ -1,7 +1,7 @@
 """
-Sensor Tester Clock Node — Grove 4-Digit Display / TM1637 (Python)
+Sensor Playground Clock Node — Grove 4-Digit Display / TM1637 (Python)
 
-Implements the *actuator* variant of the Sensor Tester Sensor Interface on
+Implements the *actuator* variant of the Sensor Playground Sensor Interface on
 single-board computers (Raspberry Pi & co.). Like the LED node it talks in
 both directions: the app pushes the time to show (and a brightness), and the
 node reports the state it is actually displaying — which keeps changing on

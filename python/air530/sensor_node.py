@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — Air530 GPS (Python)
+Sensor Playground Sensor Node — Air530 GPS (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a Grove GPS (Air530) module. Like the CozIR the
 Air530 is not an I2C device: it continuously streams NMEA-0183 sentences
 over a 9600-baud UART (serial). The node reads one burst per request and

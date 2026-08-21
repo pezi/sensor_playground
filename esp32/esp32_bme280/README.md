@@ -1,6 +1,6 @@
-# ESP32 BME280 Sensor Node for Sensor Tester
+# ESP32 BME280 Sensor Node for Sensor Playground
 
-This Arduino project implements the Sensor Tester
+This Arduino project implements the Sensor Playground
 [Sensor Interface](../../../docs/sensor.md) on an ESP32 with a BME280 I2C
 sensor (temperature, humidity, pressure).
 
@@ -83,7 +83,7 @@ arduino-cli monitor -p <serial-port> --config baudrate=115200
 
 1. Copy `secrets.h.example` to `secrets.h`.
 2. Edit `secrets.h` and enter your WiFi SSID, Password, and the API Key
-   that clients (the Sensor Tester app) must present.
+   that clients (the Sensor Playground app) must present.
 
 **Note:** `secrets.h` is excluded from Git to protect your credentials.
 

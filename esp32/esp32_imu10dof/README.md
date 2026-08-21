@@ -1,6 +1,6 @@
-# ESP32 IMU 10DOF Sensor Node for Sensor Tester
+# ESP32 IMU 10DOF Sensor Node for Sensor Playground
 
-This Arduino project implements the Sensor Tester
+This Arduino project implements the Sensor Playground
 [Sensor Interface](../../../docs/sensor.md) on an ESP32 with a
 [Grove IMU 10DOF](https://wiki.seeedstudio.com/Grove-IMU_10DOF/) board
 (MPU9250 + BMP280) via I2C.
@@ -18,10 +18,10 @@ Set `ACTIVE_TRANSPORT` near the top of the sketch:
 | Value            | Behaviour |
 |------------------|-----------|
 | `TRANSPORT_WIFI` | UDP discovery (9133) + WebSocket push (9132, `ws://`). The app discovers it, then **streams** readings pushed every 250 ms. No TLS certificate needed. |
-| `TRANSPORT_BLE`  | BLE GATT service. The app scans for the Sensor Tester service UUID, writes the API key to the auth characteristic, then **subscribes** to the data characteristic. No TLS certificate needed. |
+| `TRANSPORT_BLE`  | BLE GATT service. The app scans for the Sensor Playground service UUID, writes the API key to the auth characteristic, then **subscribes** to the data characteristic. No TLS certificate needed. |
 
 The JSON payload is identical on both transports. The BLE GATT UUIDs are the
-shared Sensor Tester contract (`d1a51b00-000{1,2,3}-…`, see the sketch) and
+shared Sensor Playground contract (`d1a51b00-000{1,2,3}-…`, see the sketch) and
 must match the app's `BleUuids`.
 
 ## Hardware Requirements
@@ -78,7 +78,7 @@ arduino-cli monitor -p <serial-port> --config baudrate=115200
 
 1. Copy `secrets.h.example` to `secrets.h`.
 2. Edit `secrets.h` and enter your WiFi SSID, Password, and the API Key
-   that clients (the Sensor Tester app) must present.
+   that clients (the Sensor Playground app) must present.
 
 **Note:** `secrets.h` is excluded from Git to protect your credentials.
 

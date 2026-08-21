@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — AHT10/AHT20 (Python)
+Sensor Playground Sensor Node — AHT10/AHT20 (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with an ASAIR AHT10 or AHT20 I2C sensor
 (temperature, humidity). Both chips share the fixed address 0x38 and the
 same measurement protocol.

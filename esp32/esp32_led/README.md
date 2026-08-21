@@ -1,6 +1,6 @@
-# ESP32 LED Node for Sensor Tester
+# ESP32 LED Node for Sensor Playground
 
-An **actuator** node: the Sensor Tester app switches an LED on the ESP32 on and
+An **actuator** node: the Sensor Playground app switches an LED on the ESP32 on and
 off, and the node reports the resulting state back. An optional push button
 wired to the same node toggles the same LED locally, so the app follows changes
 it did not cause.

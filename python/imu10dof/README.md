@@ -1,15 +1,15 @@
-# IMU 10DOF Sensor Node for Sensor Tester (Python)
+# IMU 10DOF Sensor Node for Sensor Playground (Python)
 
-This Python script implements the Sensor Tester sensor interface on
+This Python script implements the Sensor Playground sensor interface on
 single-board computers with a
 [Grove IMU 10DOF](https://wiki.seeedstudio.com/Grove-IMU_10DOF/) board
 (MPU9250 + BMP280). The MPU9250 axes are reduced to roll, pitch and compass
 heading angles plus the total acceleration magnitude (g-force); the BMP280
-adds temperature and barometric pressure. Over Wi-Fi the Sensor Tester app
+adds temperature and barometric pressure. Over Wi-Fi the Sensor Playground app
 discovers this node via UDP broadcast (port 9133) and then **streams** the
 readings from a WebSocket (port 9132, `ws://`, `X-Api-Key` header on the
 handshake) — the app streams motion sensors rather than polling them; over
-BLE the node advertises the Sensor Tester GATT service instead.
+BLE the node advertises the Sensor Playground GATT service instead.
 
 It is the Python/SoC counterpart of the ESP32 sketch in
 `../../esp32/esp32_imu10dof/` and supports the same two transports (Wi-Fi
@@ -102,11 +102,11 @@ asyncio.run(main())
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-imu10dof.service`:
+Create `/etc/systemd/system/sensor-playground-imu10dof.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester IMU 10DOF Node
+Description=Sensor Playground IMU 10DOF Node
 After=network-online.target
 Wants=network-online.target
 
@@ -126,8 +126,8 @@ Then enable and start:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-imu10dof
-sudo systemctl start sensor-tester-imu10dof
+sudo systemctl enable sensor-playground-imu10dof
+sudo systemctl start sensor-playground-imu10dof
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

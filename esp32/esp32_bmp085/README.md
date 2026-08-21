@@ -1,9 +1,9 @@
-# ESP32 BMP085 Node for Sensor Tester
+# ESP32 BMP085 Node for Sensor Playground
 
 Reads a [BMP085 barometer](https://wiki.seeedstudio.com/Grove-Barometer_Sensor/)
 — the sensor behind the Grove Barometer Sensor, and the ancestor of the BME280
 — and reports **temperature, barometric pressure and altitude** to the Sensor
-Tester app.
+Playground app.
 
 The pin-compatible **BMP180** uses the same registers and works with this
 sketch unchanged.

@@ -1,0 +1,7 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "serial_port": "/dev/serial0",
+  "transport": "wifi",
+  "emulation": false
+}

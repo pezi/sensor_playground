@@ -1,6 +1,6 @@
-# Grove NFC Tag Node for Sensor Tester (Python)
+# Grove NFC Tag Node for Sensor Playground (Python)
 
-This Python script implements the Sensor Tester sensor interface on
+This Python script implements the Sensor Playground sensor interface on
 single-board computers with a Grove NFC Tag — a **passive
 dual-interface EEPROM** (ST M24LR64E-R, 8 KB). The board is not a
 reader: a phone or any ISO 15693 NFC writer stores an NDEF message on
@@ -9,7 +9,7 @@ it over RF, and this node reads the same memory over I2C. It is a
 message over a **WebSocket** (`ws://`, port 9132, `X-Api-Key` checked
 on the handshake) whenever the content changes. The app discovers it
 via UDP broadcast on port 9133. Over BLE the node advertises the Sensor
-Tester GATT service instead and sends each change as a notification.
+Playground GATT service instead and sends each change as a notification.
 
 It is the Python/SoC counterpart of the ESP32 sketch in
 `../../esp32/esp32_nfctag/` and supports the same two transports (Wi-Fi
@@ -117,9 +117,9 @@ a new `{"kind": ...}` message appears within a second.
 ## Running as a Service (optional)
 
 ```ini
-# /etc/systemd/system/sensor-tester-nfctag.service
+# /etc/systemd/system/sensor-playground-nfctag.service
 [Unit]
-Description=Sensor Tester NFC tag node
+Description=Sensor Playground NFC tag node
 After=network-online.target
 
 [Service]

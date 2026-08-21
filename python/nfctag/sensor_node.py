@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — Grove NFC Tag (Python)
+Sensor Playground Sensor Node — Grove NFC Tag (Python)
 
-Implements the *push* variant of the Sensor Tester Sensor Interface on
+Implements the *push* variant of the Sensor Playground Sensor Interface on
 single-board computers (Raspberry Pi & co.) with a Grove NFC Tag — a
 passive dual-interface EEPROM (ST M24LR64E-R, 8 KB). A phone or NFC
 writer stores an NDEF message over the ISO 15693 RF interface; this node

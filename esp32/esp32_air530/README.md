@@ -1,8 +1,8 @@
-# ESP32 Air530 GPS Sensor Node for Sensor Tester
+# ESP32 Air530 GPS Sensor Node for Sensor Playground
 
 This Arduino project drives a **Grove GPS (Air530) module** on an ESP32 and
 serves latitude, longitude, altitude and the satellites-in-use count to the
-Sensor Tester app.
+Sensor Playground app.
 
 > **Serial, not I2C.** Like the CozIR, the Air530 is a UART device: it
 > continuously streams standard NMEA-0183 sentences at 9600 baud. The sketch
@@ -32,10 +32,10 @@ Set `ACTIVE_TRANSPORT` near the top of the sketch:
 | Value            | Behaviour |
 |------------------|-----------|
 | `TRANSPORT_WIFI` | UDP discovery (9133) + HTTPS REST (9132) with a self-signed certificate and the `X-Api-Key` header. |
-| `TRANSPORT_BLE`  | BLE GATT service. The app scans for the Sensor Tester service UUID, writes the API key to the auth characteristic, then reads/subscribes to the data characteristic. |
+| `TRANSPORT_BLE`  | BLE GATT service. The app scans for the Sensor Playground service UUID, writes the API key to the auth characteristic, then reads/subscribes to the data characteristic. |
 
 The JSON payload is identical on both transports. The BLE GATT UUIDs are the
-shared Sensor Tester contract (`d1a51b00-000{1,2,3}-…`, see the sketch) and
+shared Sensor Playground contract (`d1a51b00-000{1,2,3}-…`, see the sketch) and
 must match the app's `BleUuids`.
 
 ## Hardware Requirements
@@ -93,7 +93,7 @@ arduino-cli monitor -p <serial-port> --config baudrate=115200
 
 1. Copy `secrets.h.example` to `secrets.h`.
 2. Edit `secrets.h` and enter your WiFi SSID, Password, and the API Key
-   that clients (the Sensor Tester app) must present.
+   that clients (the Sensor Playground app) must present.
 
 ### SSL Certificate (TRANSPORT_WIFI)
 

@@ -1,7 +1,7 @@
 /*
- * Sensor Tester Sensor Node — ESP32 + PAJ7620U2 (Grove Gesture)
+ * Sensor Playground Sensor Node — ESP32 + PAJ7620U2 (Grove Gesture)
  *
- * Implements a *push* variant of the Sensor Tester Sensor Interface. Unlike the
+ * Implements a *push* variant of the Sensor Playground Sensor Interface. Unlike the
  * environment sensors (which serve readings on request), a gesture sensor only
  * produces data at the instant a gesture happens, so this node pushes one
  * JSON message per detected gesture:
@@ -52,7 +52,7 @@
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -241,7 +241,7 @@ void transportPublish(const char* gesture) {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester Sensor Node ---");
+  Serial.println("\n--- Sensor Playground Sensor Node ---");
 
   Wire.begin();
   if (paj7620Init() != 0) {

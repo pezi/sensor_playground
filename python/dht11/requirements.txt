@@ -1,0 +1,12 @@
+flask>=3.0.0
+adafruit-circuitpython-dht>=4.0.0
+bless>=0.2.6   # BLE transport ("transport": "ble" in config.json)
+#
+# adafruit-circuitpython-dht pulls in Adafruit Blinka and ships a small
+# compiled pulse reader (libgpiod_pulsein) — the DHT single-wire protocol is
+# timing-critical and cannot be bit-banged from Python.
+#
+# Blinka needs the lgpio GPIO backend. Do NOT pip-install lgpio: piwheels has
+# no wheel for it and the source build needs swig. Create the venv with
+# --system-site-packages so pip uses the system python3-lgpio instead (see
+# README, "Software Setup").

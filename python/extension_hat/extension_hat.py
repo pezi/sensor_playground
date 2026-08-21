@@ -1,5 +1,5 @@
 """
-Extension hat helper for Sensor Tester nodes (Python / Raspberry Pi & co.)
+Extension hat helper for Sensor Playground nodes (Python / Raspberry Pi & co.)
 
 A port of the dart_periphery `extension_hat.dart` driver to smbus2, so the
 Python sensor nodes can drive Grove/BakeBit expansion hats over I2C:

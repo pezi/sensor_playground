@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — MPU6050 (Python)
+Sensor Playground Sensor Node — MPU6050 (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with an MPU6050 6-axis IMU. The accelerometer axes are
 converted into roll / pitch angles plus the total acceleration magnitude
 (g-force); the on-die temperature sensor is reported as well.

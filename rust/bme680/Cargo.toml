@@ -1,0 +1,20 @@
+[package]
+name = "sensor-playground-bme680"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Sensor Playground BME680 sensor node (Rust) - HTTPS REST + UDP discovery + BLE"
+
+[[bin]]
+name = "sensor_node_bme680"
+path = "src/main.rs"
+
+[dependencies]
+common = { package = "sensor-playground-common", path = "../common" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+fastrand = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+linux-embedded-hal = "0.3"
+embedded-hal = "0.2"

@@ -1,7 +1,7 @@
 """
-Sensor Tester Sensor Node — MMA7660 (Python)
+Sensor Playground Sensor Node — MMA7660 (Python)
 
-Implements the Sensor Tester Sensor Interface on single-board computers
+Implements the Sensor Playground Sensor Interface on single-board computers
 (Raspberry Pi & co.) with a Grove 3-Axis Digital Accelerometer ±1.5g
 (MMA7660FC). The raw axes are converted into roll / pitch angles plus the
 total acceleration magnitude (g-force).

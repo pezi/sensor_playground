@@ -1,7 +1,23 @@
-# ESP32-CAM Camera Node for Sensor Tester
+# ESP32-CAM Camera Node for Sensor Playground
+
+This sketch is used by the following apps:
+
+
+**Sensor Playground**
+
+[![Get it on Google Play](https://img.shields.io/badge/Google_Play-Download-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=app.flutterdev.sensortester)
+[![Get it on the App Store](https://img.shields.io/badge/App_Store-Download-0D96F6?style=flat&logo=app-store&logoColor=white)](https://apps.apple.com/us/app/sensor-playground/id6778514035)
+
+**ESP32-Cam** 
+
+[![Get it on Google Play](https://img.shields.io/badge/Google_Play-Download-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=at.flutterdev.esp32_cam)
+[![Get it on the App Store](https://img.shields.io/badge/App_Store-Download-0D96F6?style=flat&logo=app-store&logoColor=white)](https://apps.apple.com/us/app/sensor-playground/id6754187049)
+
+
+
 
 This Arduino project makes an ESP32 camera board discoverable by the
-Sensor Tester app. It is based on Espressif's official
+Sensor Playground app. It is based on Espressif's official
 [CameraWebServer example](https://github.com/espressif/arduino-esp32/tree/master/libraries/ESP32/examples/Camera/CameraWebServer)
 and extends it with the same UDP discovery mechanism used by the other
 sensor nodes in this repository, so the app can find a camera on the
@@ -10,7 +26,7 @@ local network the same way it finds a sensor.
 ## Changes vs. the original example
 
 - **UDP discovery (scan) support added:** the sketch listens on UDP port
-  `9133` and answers `SENSOR_TESTER` broadcast probes (the Sensor Tester
+  `9133` and answers `SENSOR_TESTER` broadcast probes (the Sensor Playground
   discovery contract, see the other `esp32_*` nodes). The reply is a
   short-key JSON telling the app where to reach the camera:
 

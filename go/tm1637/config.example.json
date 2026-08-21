@@ -1,0 +1,12 @@
+{
+  "api_key": "your-sensor-api-key",
+  "hostname": "",
+  "sensor_name": "TM1637",
+  "interface": "gpio",
+  "gpio_chip": "/dev/gpiochip0",
+  "clk_pin": 5,
+  "dio_pin": 6,
+  "brightness": 3,
+  "transport": "wifi",
+  "emulation": false
+}

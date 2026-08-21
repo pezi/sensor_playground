@@ -1,7 +1,7 @@
 /*
- * Sensor Tester Sensor Node — ESP32 + VL53L0X (Time-of-Flight)
+ * Sensor Playground Sensor Node — ESP32 + VL53L0X (Time-of-Flight)
  *
- * Implements a *push* variant of the Sensor Tester Sensor Interface. Like the
+ * Implements a *push* variant of the Sensor Playground Sensor Interface. Like the
  * gesture node, a distance sensor is event-driven: the node measures
  * continuously and pushes one JSON message whenever the distance changes
  * (or at least once per second as a heartbeat):
@@ -47,7 +47,7 @@
   #include <BLE2902.h>
   #include "../common/sensor_ble_framing.h"
 
-  // Shared Sensor Tester GATT contract (must match the app's BleUuids).
+  // Shared Sensor Playground GATT contract (must match the app's BleUuids).
   #define SERVICE_UUID   "d1a51b00-0001-4a7e-9b3c-0a1b2c3d4e5f"
   #define DATA_CHAR_UUID "d1a51b00-0002-4a7e-9b3c-0a1b2c3d4e5f"
   #define AUTH_CHAR_UUID "d1a51b00-0003-4a7e-9b3c-0a1b2c3d4e5f"
@@ -276,7 +276,7 @@ void transportPublish(bool valid, uint16_t mm) {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- Sensor Tester Sensor Node ---");
+  Serial.println("\n--- Sensor Playground Sensor Node ---");
 
   Wire.begin();
   if (!lox.begin()) {

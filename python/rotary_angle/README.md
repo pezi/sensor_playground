@@ -1,8 +1,8 @@
-# Rotary Angle Sensor Node for Sensor Tester (Python)
+# Rotary Angle Sensor Node for Sensor Playground (Python)
 
 Reads a [Grove Rotary Angle Sensor](https://wiki.seeedstudio.com/Grove-Rotary_Angle_Sensor/)
 — a 10 kΩ potentiometer with 300° of mechanical travel — through an extension
-hat's ADC and reports the knob position to the Sensor Tester app, which draws
+hat's ADC and reports the knob position to the Sensor Playground app, which draws
 it as a needle on a dial.
 
 Unlike the light sensor (also analog, but polled over HTTPS every few seconds)
@@ -10,7 +10,7 @@ this is a **push** node: the app's needle tracks the knob, so a reading that is
 seconds old is useless. The node samples continuously and sends a message
 whenever the knob has moved past the deadband — over Wi-Fi on a **WebSocket**
 (`ws://`, port 9132, `X-Api-Key` checked on the handshake), discovered via UDP
-broadcast on port 9133. Over BLE the node advertises the Sensor Tester GATT
+broadcast on port 9133. Over BLE the node advertises the Sensor Playground GATT
 service instead and sends each movement as a notification.
 
 It is the Python/SoC counterpart of `../../esp32/esp32_rotary_angle/` and
@@ -133,11 +133,11 @@ movement. Turn it to both end stops and check that `adc` reaches `0` and
 
 ## Running as a Service (optional)
 
-Create `/etc/systemd/system/sensor-tester-rotary.service`:
+Create `/etc/systemd/system/sensor-playground-rotary.service`:
 
 ```ini
 [Unit]
-Description=Sensor Tester Rotary Angle Node
+Description=Sensor Playground Rotary Angle Node
 After=network-online.target
 Wants=network-online.target
 
@@ -155,8 +155,8 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable sensor-tester-rotary
-sudo systemctl start sensor-tester-rotary
+sudo systemctl enable sensor-playground-rotary
+sudo systemctl start sensor-playground-rotary
 ```
 
 For the BLE transport, depend on Bluetooth instead of the network and make

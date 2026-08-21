@@ -1,5 +1,20 @@
 # CameraWebServerWS — ESP32-CAM WebSocket Node
 
+This sketch is used by the following apps:
+
+
+**Sensor Playground**
+
+[![Get it on Google Play](https://img.shields.io/badge/Google_Play-Download-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=app.flutterdev.sensortester)
+[![Get it on the App Store](https://img.shields.io/badge/App_Store-Download-0D96F6?style=flat&logo=app-store&logoColor=white)](https://apps.apple.com/us/app/sensor-playground/id6778514035)
+
+**ESP32-Cam** 
+
+[![Get it on Google Play](https://img.shields.io/badge/Google_Play-Download-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=at.flutterdev.esp32_cam)
+[![Get it on the App Store](https://img.shields.io/badge/App_Store-Download-0D96F6?style=flat&logo=app-store&logoColor=white)](https://apps.apple.com/us/app/sensor-playground/id6754187049)
+
+
+
 WebSocket-only variant of the [`CameraWebServer`](../CameraWebServer/)
 sketch. Camera status, camera controls and the JPEG video all travel over
 a single WebSocket server, authenticated with the shared `X-Api-Key`
@@ -91,7 +106,7 @@ least one client is streaming, matching the HTTP firmware's behavior.
 
 On the first run the script creates `secrets.h` from
 `secrets.h.example`; fill in your Wi-Fi credentials, API key (min. 8
-characters, must match the key configured in the Sensor Tester /
+characters, must match the key configured in the Sensor Playground /
 ESP32-CAM app — or empty to disable the key check) and host name, then
 re-run.
 

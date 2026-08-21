@@ -1,0 +1,20 @@
+{
+  "name": "sensor-playground-paj7620",
+  "version": "1.0.0",
+  "description": "Sensor Playground PAJ7620 gesture sensor node (Node.js) - WebSocket + UDP discovery",
+  "main": "sensor_node.js",
+  "scripts": {
+    "start": "node sensor_node.js",
+    "test": "node test_driver.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "optionalDependencies": {
+    "i2c-bus": "^5.2.3"
+  }
+}
