@@ -2,8 +2,6 @@
 
 ![Sensor Playground](images/playground.webp "Sensor Playground")
 
-[![Get it on Google Play](https://img.shields.io/badge/Google_Play-Download-27875F?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=app.flutterdev.jettyrunner)
-
 Companion firmware for the **Sensor Playground** app: ready-to-flash Arduino
 sketches for the **ESP32** and equivalent Python scripts for **Raspberry Pi**
 class single-board computers, turning a sensor and a board into a node the app
